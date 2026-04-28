@@ -1567,6 +1567,145 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
   );
 };
 
+// ── CIRCUIT MAP COMPONENT ────────────────────────────────────────────────────
+
+interface CircuitMapProps {
+  lapData: LapSnapshot[];
+  drivers: Driver[] | null;
+  currentLapIndex: number;
+  circuitName: string;
+}
+
+const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, circuitName }) => {
+  const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
+  
+  // Get current lap snapshot
+  const currentSnap = lapData[Math.min(currentLapIndex, lapData.length - 1)];
+  if (!currentSnap) {
+    return <div style={{ padding: "20px", color: "var(--muted)" }}>Loading circuit data…</div>;
+  }
+
+  // Calculate driver positions along a simplified oval circuit path
+  const driverPositions = currentSnap.order.map((driverCode, index) => {
+    const driver = drivers?.find(d => d.id === driverCode);
+    // Distribute drivers around a 0-100% circuit position
+    const circuitPercent = (index / currentSnap.order.length) * 100;
+    return { driverCode, driver, position: circuitPercent, index };
+  });
+
+  // Convert percentage to SVG coordinates (simplified elliptical path)
+  const getCoords = (percent: number): [number, number] => {
+    const angle = (percent / 100) * Math.PI * 2;
+    const cx = 200, cy = 150;
+    const rx = 160, ry = 110;
+    return [
+      cx + rx * Math.cos(angle),
+      cy + ry * Math.sin(angle),
+    ];
+  };
+
+  return (
+    <div style={{
+      marginTop: 40,
+      padding: "20px",
+      backgroundColor: "rgba(0,0,0,0.3)",
+      borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.1)",
+    }}>
+      <div style={{
+        fontSize: 14,
+        fontWeight: 700,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        marginBottom: 20,
+        color: "var(--accent)",
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}>
+        {circuitName} — Live Positions
+      </div>
+
+      <svg 
+        viewBox="0 0 400 300" 
+        style={{ 
+          width: "100%", 
+          maxWidth: "600px",
+          backgroundColor: "rgba(0,0,0,0.5)",
+          borderRadius: 4,
+          border: "1px solid rgba(255,255,255,0.1)",
+        }}
+      >
+        {/* Circuit path (simplified oval) */}
+        <ellipse
+          cx="200"
+          cy="150"
+          rx="160"
+          ry="110"
+          fill="none"
+          stroke="rgba(255,255,255,0.2)"
+          strokeWidth="2"
+          strokeDasharray="5,5"
+        />
+
+        {/* Start/finish line indicator */}
+        <text x="360" y="150" fill="var(--green)" fontSize="12" fontWeight="700">
+          S/F
+        </text>
+
+        {/* Driver position dots */}
+        {driverPositions.slice(0, 20).map(({ driverCode, driver, position }) => {
+          const [x, y] = getCoords(position);
+          const isHovered = hoveredDriver === driverCode;
+          return (
+            <g key={driverCode}>
+              <circle
+                cx={x}
+                cy={y}
+                r={isHovered ? 8 : 6}
+                fill={driver?.color || "#888"}
+                opacity={isHovered ? 1 : 0.8}
+                style={{ cursor: "pointer", transition: "all 0.2s" }}
+                onMouseEnter={() => setHoveredDriver(driverCode)}
+                onMouseLeave={() => setHoveredDriver(null)}
+              />
+              {isHovered && (
+                <>
+                  <rect
+                    x={x - 35}
+                    y={y - 20}
+                    width="70"
+                    height="20"
+                    fill="rgba(0,0,0,0.9)"
+                    rx="2"
+                  />
+                  <text
+                    x={x}
+                    y={y - 6}
+                    textAnchor="middle"
+                    fill="#fff"
+                    fontSize="11"
+                    fontWeight="700"
+                  >
+                    {driver?.name.split(" ")[1] || driverCode}
+                  </text>
+                </>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      <div style={{
+        marginTop: 15,
+        fontSize: 11,
+        color: "var(--muted)",
+        fontStyle: "italic",
+      }}>
+        Hover over dots to see driver names. Positions are updated in real-time.
+      </div>
+    </div>
+  );
+};
+
 // ── RACE TRACKER PAGE ────────────────────────────────────────────────────────
 
 const RaceTrackerPage: FC = () => {
@@ -1823,6 +1962,13 @@ const RaceTrackerPage: FC = () => {
               lapData={effectiveLapData}
               drivers={drivers}
               currentLapIndex={lapIndex}
+            />
+
+            <CircuitMap
+              lapData={effectiveLapData}
+              drivers={drivers}
+              currentLapIndex={lapIndex}
+              circuitName={activeRace.circuit}
             />
           </>
         )
