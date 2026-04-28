@@ -2738,56 +2738,200 @@ const TeamsPage: FC = () => {
   return (
     <div className="page">
       <div className="page-title">Teams Overview</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginTop: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20, marginTop: 24 }}>
         {teams.map(team => (
           <div key={team.id} style={{
             background: "var(--surface)",
             border: `1px solid ${team.color}33`,
             borderRadius: 4,
-            padding: 20,
+            padding: 0,
             cursor: "pointer",
             transition: "all 0.2s",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.borderColor = `${team.color}99`;
             e.currentTarget.style.boxShadow = `0 0 12px ${team.color}22`;
+            e.currentTarget.style.transform = "translateY(-2px)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.borderColor = `${team.color}33`;
             e.currentTarget.style.boxShadow = "none";
+            e.currentTarget.style.transform = "translateY(0)";
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background: team.color,
-                boxShadow: `0 0 12px ${team.color}`,
-              }} />
-              <div>
+            {/* Team Logo Header */}
+            <div style={{
+              background: `linear-gradient(135deg, ${team.color}15 0%, ${team.color}05 100%)`,
+              padding: 16,
+              borderBottom: `1px solid ${team.color}33`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              minHeight: 100,
+            }}>
+              {team.logo ? (
+                <img 
+                  src={team.logo} 
+                  alt={team.name}
+                  style={{ 
+                    maxHeight: 80, 
+                    maxWidth: "90%", 
+                    objectFit: "contain",
+                    filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
+                  }} 
+                />
+              ) : (
                 <div style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 800,
-                  fontSize: 18,
-                  color: "var(--text)",
-                  letterSpacing: 0.5,
-                  textTransform: "uppercase" as const,
-                }}>
-                  {team.name}
-                </div>
-                <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase" as const }}>
-                  {team.base}
-                </div>
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: team.color,
+                  boxShadow: `0 0 12px ${team.color}`,
+                }} />
+              )}
+            </div>
+            
+            {/* Content Area */}
+            <div style={{ padding: 20, flex: 1, display: "flex", flexDirection: "column" }}>
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 800,
+                fontSize: 18,
+                color: "var(--text)",
+                letterSpacing: 0.5,
+                textTransform: "uppercase" as const,
+                marginBottom: 8,
+              }}>
+                {team.name}
               </div>
-            </div>
-            <div style={{ display: "grid", gap: 8, fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
-              <div>👤 <strong>Principal:</strong> {team.principal}</div>
-              <div>🏗️ <strong>Technical Director:</strong> {team.technicalDirector}</div>
-              <div>🏁 <strong>Chassis:</strong> {team.chassisName}</div>
-              <div>🏆 <strong>Championships:</strong> {team.championships}</div>
-            </div>
-            <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
-              {team.description}
+              <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase" as const, marginBottom: 12 }}>
+                {team.base}
+              </div>
+              
+              <div style={{ display: "grid", gap: 6, fontSize: 12, color: "var(--muted)", marginBottom: 12 }}>
+                <div>👤 <strong>Principal:</strong> {team.principal}</div>
+                <div>🏗️ <strong>Technical Director:</strong> {team.technicalDirector}</div>
+                <div>🏁 <strong>Chassis:</strong> {team.chassisName}</div>
+                <div>🏆 <strong>Championships:</strong> {team.championships}</div>
+              </div>
+              
+              <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, marginBottom: 14, flex: 1 }}>
+                {team.description}
+              </div>
+              
+              {/* Official Links */}
+              <div style={{ 
+                borderTop: `1px solid ${team.color}33`,
+                paddingTop: 12,
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+              }}>
+                {team.website && (
+                  <a 
+                    href={team.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: `${team.color}20`,
+                      border: `1px solid ${team.color}40`,
+                      borderRadius: 3,
+                      color: team.color,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = `${team.color}40`;
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = `${team.color}20`;
+                      elem.style.color = team.color;
+                    }}
+                  >
+                    🌐 WEBSITE
+                  </a>
+                )}
+                {team.twitter && (
+                  <a 
+                    href={team.twitter} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: "#1DA1F220",
+                      border: "1px solid #1DA1F240",
+                      borderRadius: 3,
+                      color: "#1DA1F2",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#1DA1F240";
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#1DA1F220";
+                      elem.style.color = "#1DA1F2";
+                    }}
+                  >
+                    𝕏 TWITTER
+                  </a>
+                )}
+                {team.instagram && (
+                  <a 
+                    href={team.instagram} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: "6px 12px",
+                      background: "#E1306C20",
+                      border: "1px solid #E1306C40",
+                      borderRadius: 3,
+                      color: "#E1306C",
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#E1306C40";
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#E1306C20";
+                      elem.style.color = "#E1306C";
+                    }}
+                  >
+                    📷 INSTAGRAM
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         ))}
@@ -2812,7 +2956,7 @@ const DriversPage: FC = () => {
   return (
     <div className="page">
       <div className="page-title">Driver Profiles</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginTop: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginTop: 24 }}>
         {drivers.map(driver => (
           <div key={driver.code} style={{
             background: "var(--surface)",
@@ -2829,40 +2973,66 @@ const DriversPage: FC = () => {
             e.currentTarget.style.transform = "translateY(0)";
             e.currentTarget.style.borderColor = "var(--border)";
           }}>
+            {/* Profile Image Header */}
             <div style={{
-              padding: 16,
-              borderBottom: "1px solid var(--border)",
+              height: 200,
+              background: "var(--surface2)",
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              {driver.profileImage ? (
+                <img 
+                  src={driver.profileImage} 
+                  alt={driver.name}
+                  style={{ 
+                    width: "100%", 
+                    height: "100%", 
+                    objectFit: "cover",
+                    objectPosition: "center top"
+                  }} 
+                />
+              ) : (
                 <div style={{
-                  width: 60,
-                  height: 60,
+                  width: 100,
+                  height: 100,
                   borderRadius: "50%",
-                  background: "var(--surface2)",
+                  background: "var(--surface)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 32,
+                  fontSize: 48,
                   fontWeight: 900,
                 }}>
                   {driver.code.charAt(0)}
                 </div>
-                <div>
-                  <div style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontWeight: 800,
-                    fontSize: 18,
-                    color: "var(--text)",
-                    letterSpacing: 0.5,
-                  }}>
-                    {driver.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, marginTop: 4 }}>
-                    #{driver.number} · {driver.nationality}
-                  </div>
+              )}
+            </div>
+            
+            <div style={{
+              padding: 16,
+              borderBottom: "1px solid var(--border)",
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: "var(--text)",
+                  letterSpacing: 0.5,
+                }}>
+                  {driver.name}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, marginTop: 4 }}>
+                  #{driver.number} · {driver.nationality}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--green)", letterSpacing: 0.5, marginTop: 6, fontWeight: 600 }}>
+                  {driver.team}
                 </div>
               </div>
             </div>
+            
             <div style={{ padding: 16, display: "grid", gap: 12 }}>
               <div>
                 <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" as const, fontWeight: 700 }}>Career Stats</div>
@@ -2904,6 +3074,118 @@ const DriversPage: FC = () => {
                     </span>
                   ))}
                 </div>
+              </div>
+              
+              {/* Team & Social Links */}
+              <div style={{
+                borderTop: "1px solid var(--border)",
+                paddingTop: 12,
+                display: "flex",
+                gap: 8,
+                flexWrap: "wrap",
+              }}>
+                {driver.teamWebsite && (
+                  <a 
+                    href={driver.teamWebsite} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "6px 10px",
+                      background: "var(--red-dim)",
+                      border: "1px solid var(--red)",
+                      borderRadius: 3,
+                      color: "var(--red)",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "var(--red)";
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "var(--red-dim)";
+                      elem.style.color = "var(--red)";
+                    }}
+                  >
+                    🏢 TEAM
+                  </a>
+                )}
+                {driver.twitter && (
+                  <a 
+                    href={driver.twitter} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "6px 10px",
+                      background: "#1DA1F220",
+                      border: "1px solid #1DA1F240",
+                      borderRadius: 3,
+                      color: "#1DA1F2",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#1DA1F2";
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#1DA1F220";
+                      elem.style.color = "#1DA1F2";
+                    }}
+                  >
+                    𝕏
+                  </a>
+                )}
+                {driver.instagram && (
+                  <a 
+                    href={driver.instagram} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "6px 10px",
+                      background: "#E1306C20",
+                      border: "1px solid #E1306C40",
+                      borderRadius: 3,
+                      color: "#E1306C",
+                      fontSize: 10,
+                      fontWeight: 600,
+                      textDecoration: "none",
+                      transition: "all 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#E1306C";
+                      elem.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      const elem = e.currentTarget;
+                      elem.style.background = "#E1306C20";
+                      elem.style.color = "#E1306C";
+                    }}
+                  >
+                    📷
+                  </a>
+                )}
               </div>
             </div>
           </div>

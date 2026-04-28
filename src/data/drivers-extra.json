@@ -7,6 +7,10 @@
       "dateOfBirth": "1985-01-07",
       "nationality": "British",
       "team": "Mercedes",
+      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/l/lewishamilton_webbig.jpg.transform/8col-retina/image.jpg",
+      "teamWebsite": "https://www.mercedes-amgpetronas.com/en/",
+      "twitter": "https://twitter.com/LewisHamilton",
+      "instagram": "https://instagram.com/lewishamilton",
       "careerHighlights": {
         "worldChampionships": 7,
         "raceWins": 103,
@@ -32,6 +36,10 @@
       "dateOfBirth": "1997-12-30",
       "nationality": "Dutch",
       "team": "Red Bull Racing",
+      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/m/maxverstappen_webbig.jpg.transform/8col-retina/image.jpg",
+      "teamWebsite": "https://www.redbullracing.com/",
+      "twitter": "https://twitter.com/Max33Verstappen",
+      "instagram": "https://instagram.com/maxverstappen33",
       "careerHighlights": {
         "worldChampionships": 2,
         "raceWins": 51,
@@ -57,6 +65,10 @@
       "dateOfBirth": "1998-02-15",
       "nationality": "British",
       "team": "Mercedes",
+      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/g/georgerussell_webbig.jpg.transform/8col-retina/image.jpg",
+      "teamWebsite": "https://www.mercedes-amgpetronas.com/en/",
+      "twitter": "https://twitter.com/GeorgeRussell63",
+      "instagram": "https://instagram.com/georgerussell63",
       "careerHighlights": {
         "worldChampionships": 0,
         "raceWins": 1,

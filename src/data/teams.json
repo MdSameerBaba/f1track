@@ -10,6 +10,10 @@
       "chassisName": "W17",
       "founded": 1954,
       "championships": 8,
+      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/mercedes-amu-logo.png",
+      "website": "https://www.mercedes-amgpetronas.com",
+      "twitter": "https://twitter.com/MercedesAMGF1",
+      "instagram": "https://instagram.com/mercedesamgf1",
       "drivers": [
         {
           "code": "HAM",
@@ -48,6 +52,10 @@
       "chassisName": "RB22",
       "founded": 2005,
       "championships": 5,
+      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/red-bull-racing-logo.png",
+      "website": "https://www.redbullracing.com",
+      "twitter": "https://twitter.com/redbullracing",
+      "instagram": "https://instagram.com/redbullracing",
       "drivers": [
         {
           "code": "VER",
@@ -86,6 +94,10 @@
       "chassisName": "SF26",
       "founded": 1950,
       "championships": 16,
+      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/ferrari-logo.png",
+      "website": "https://www.ferrari.com/en-EN/formula1",
+      "twitter": "https://twitter.com/ScuderiaFerrari",
+      "instagram": "https://instagram.com/ScuderiaFerrari",
       "drivers": [
         {
           "code": "LEC",
