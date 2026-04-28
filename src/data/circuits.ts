@@ -19,6 +19,7 @@ export interface CircuitInfo {
   lapRecord: string;          // e.g. "1:31.447 (Daniel Ricciardo, 2023)"
   firstGP: number;
   imageUrl: string;           // track layout image URL
+  bannerUrl?: string;         // hero banner image URL (optional)
   history: string;
   notableTurns: NotableTurn[];
 }
@@ -38,6 +39,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:20.235 (Charles Leclerc, 2024)",
     firstGP: 1996,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Australia_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/australia/hero.jpg",
     history: "Originally a street circuit through Melbourne's Albert Park, it became Australia's F1 home in 1996, replacing Adelaide. The circuit was significantly modified in 2022, removing chicanes and widening corners to promote overtaking. Set against the backdrop of a picturesque lake, it has produced numerous memorable races including the dramatic 1996 inaugural event won by Damon Hill.",
     notableTurns: [
       { name: "Turn 1", number: "1", description: "Fast right-hander into the braking zone — a prime overtaking opportunity at the start of the lap." },
@@ -56,6 +58,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:32.238 (Michael Schumacher, 2004)",
     firstGP: 2004,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/China_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/china/hero.jpg",
     history: "Designed by Hermann Tilke and opened in 2004, the Shanghai circuit features a distinctive layout inspired by the Chinese character 'shàng' (上), meaning 'above' or 'ascending'. The track has hosted numerous exciting races, with its long back straight providing excellent overtaking opportunities. The 2019 race marked the 1000th F1 World Championship race.",
     notableTurns: [
       { name: "Turns 1-2-3", number: "1-3", description: "A long, tightening right-hand spiral that decreases in radius — one of the most physically demanding corner sequences in F1." },
@@ -74,6 +77,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:30.983 (Lewis Hamilton, 2019)",
     firstGP: 1987,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Japan_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/japan/hero.jpg",
     history: "One of the most revered circuits in motorsport, Suzuka is unique as the only figure-of-eight layout in F1, with an overpass where the track crosses itself. Built in 1962 by Honda as a test track, it became an F1 venue in 1987 and has been the stage for many championship-deciding moments, including Prost vs. Senna in 1989 and 1990, and Verstappen's 2022 title clincher.",
     notableTurns: [
       { name: "Esses (S Curves)", number: "3-7", description: "A legendary series of high-speed S-bends taken nearly flat-out, demanding perfect car balance and driver commitment — considered one of the greatest corner sequences in all of motorsport." },
@@ -93,6 +97,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:31.447 (Pedro de la Rosa, 2005)",
     firstGP: 2004,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Bahrain_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/bahrain/hero.jpg",
     history: "The first F1 circuit in the Middle East, Bahrain International Circuit opened in 2004 and has become a season-opening staple. Set in the desert south of Manama, its dramatic floodlit night race (first held in 2014) creates a spectacular visual atmosphere. The circuit hosted two races in 2020 during COVID, with the second using an alternative 'Outer' layout.",
     notableTurns: [
       { name: "Turn 1", number: "1", description: "Tight right-hander after a long straight — the prime overtaking opportunity with heavy braking from 320+ km/h." },
@@ -111,6 +116,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:30.734 (Lewis Hamilton, 2021)",
     firstGP: 2021,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Saudi_Arabia_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/saudi-arabia/hero.jpg",
     history: "The fastest street circuit in F1 history, the Jeddah Corniche Circuit debuted in 2021 along the Red Sea waterfront. With an average speed exceeding 250 km/h and 27 corners through narrow barriers, it's one of the most challenging and dangerous circuits on the calendar. The 2021 inaugural race was one of the most chaotic in F1 history, featuring red flags, penalties, and a controversial battle between Hamilton and Verstappen.",
     notableTurns: [
       { name: "Turn 1", number: "1", description: "Flat-out right-hander between concrete walls, setting the tone for this high-speed street circuit." },
@@ -129,6 +135,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:29.708 (Max Verstappen, 2023)",
     firstGP: 2022,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Miami_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/miami/hero.jpg",
     history: "Built around the Hard Rock Stadium in Miami Gardens, this semi-permanent circuit debuted in 2022 and quickly became one of F1's showpiece events. The track features a mix of high-speed straights and tight corners, with a fake marina and beach club creating a unique atmosphere. The first Sprint race at Miami in 2023 was won by Sergio Pérez.",
     notableTurns: [
       { name: "Turn 1", number: "1", description: "A heavy braking zone into a tight right-hander — the best overtaking opportunity on the circuit." },
@@ -165,6 +172,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:12.909 (Lewis Hamilton, 2021)",
     firstGP: 1950,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Monaco_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/monaco/hero.jpg",
     history: "The jewel in F1's crown, the Monaco Grand Prix has been held since 1929 and joined the F1 World Championship in 1950. Racing through the narrow streets of Monte Carlo with Armco barriers inches away, it's the ultimate test of precision and concentration. While overtaking is notoriously difficult, qualifying is supreme — Ayrton Senna holds the record with 6 victories here. The race remains the most prestigious event in motorsport.",
     notableTurns: [
       { name: "Sainte Dévote", number: "1", description: "The uphill right-hander after the start/finish straight is a classic first-lap bottleneck with cars funneling into the narrow corner." },
@@ -239,6 +247,7 @@ export const CIRCUITS: Record<string, CircuitInfo> = {
     lapRecord: "1:46.286 (Valtteri Bottas, 2018)",
     firstGP: 1950,
     imageUrl: "https://media.formula1.com/image/upload/c_fit,h_704/q_auto/v1740000000/content/dam/fom-website/2018-redesign-assets/Circuit%20maps%2016x9/Belgium_Circuit.webp",
+    bannerUrl: "https://media.formula1.com/image/upload/f_auto,c_fill,g_auto,h_640,q_auto,w_1280/v1740000000/fom-website/2024/belgium/hero.jpg",
     history: "The longest and one of the most iconic circuits in F1, Spa-Francorchamps winds through the forests of the Belgian Ardennes. Known for its unpredictable weather where one section can be dry while another is drenched in rain, it rewards brave, committed driving. The circuit has been a championship fixture since 1950 (with gaps) and is universally loved by drivers. It hosted the tragic 2019 F2 race where Anthoine Hubert lost his life.",
     notableTurns: [
       { name: "La Source", number: "1", description: "A tight hairpin at the top of the hill, the first braking zone and a common site for opening-lap contact." },

@@ -340,6 +340,25 @@ const STYLES = `
     padding: 22px 28px; margin-bottom: 20px;
     display: flex; align-items: center; gap: 24px;
     flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+  .race-header-banner {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.25;
+    z-index: 0;
+  }
+  .race-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    width: 100%;
   }
   .race-header-info { flex: 1; min-width: 200px; }
   .race-header-name {
@@ -347,13 +366,14 @@ const STYLES = `
     font-weight: 900; font-size: 38px; letter-spacing: 1px;
     color: var(--text); text-transform: uppercase;
     line-height: 1.1;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
   }
   .race-header-circuit {
     color: var(--muted); font-size: 13px; margin-top: 4px;
     font-weight: 500;
   }
 
-  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; position: relative; z-index: 1; }
   .btn {
     padding: 9px 22px;
     background: var(--red); color: #fff;
@@ -1748,36 +1768,46 @@ const RaceTrackerPage: FC = () => {
         ) : (
           <>
             <div className="race-header">
-              <div className="race-header-info">
-                <div className="race-header-name">
-                  {activeRace.country} {activeRace.name}
+              {activeRace.circuitId && getCircuitInfo(activeRace.circuitId, activeRace.circuit)?.bannerUrl && (
+                <div 
+                  className="race-header-banner"
+                  style={{
+                    backgroundImage: `url('${getCircuitInfo(activeRace.circuitId, activeRace.circuit)?.bannerUrl}')`,
+                  }}
+                />
+              )}
+              <div className="race-header-content">
+                <div className="race-header-info">
+                  <div className="race-header-name">
+                    {activeRace.country} {activeRace.name}
+                  </div>
+                  <div className="race-header-circuit">
+                    {activeRace.circuit} · {activeRace.city}
+                    {raceIsLive && (
+                      <span style={{
+                        marginLeft: 10, color: "var(--green)", fontSize: 11,
+                        fontWeight: 700, letterSpacing: 1,
+                      }}>
+                        ● REAL DATA{showingPriorYear ? ` (${sourceYear} SEASON)` : ""}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="race-header-circuit">
-                  {activeRace.circuit} · {activeRace.city}
-                  {raceIsLive && (
-                    <span style={{
-                      marginLeft: 10, color: "var(--green)", fontSize: 11,
-                      fontWeight: 700, letterSpacing: 1,
-                    }}>
-                      ● REAL DATA{showingPriorYear ? ` (${sourceYear} SEASON)` : ""}
-                    </span>
-                  )}
+                <div className="controls">
+                  <div className="lap-info">
+                    LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
+                  </div>
+                  <button className="btn secondary" onClick={reset}>↺ RESET</button>
+                  <button className="btn" onClick={togglePlay}>
+                    {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
+                  </button>
+                  <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
+                    className="speed-select">
+                    {SPEED_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label} Speed</option>
+                    ))}
+                  </select>
                 </div>
-              </div>
-              <div className="controls">
-                <div className="lap-info">
-                  LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
-                </div>
-                <button className="btn secondary" onClick={reset}>↺ RESET</button>
-                <button className="btn" onClick={togglePlay}>
-                  {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
-                </button>
-                <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
-                  className="speed-select">
-                  {SPEED_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label} Speed</option>
-                  ))}
-                </select>
               </div>
             </div>
 
