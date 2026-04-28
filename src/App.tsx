@@ -1567,6 +1567,243 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
   );
 };
 
+// ── LIVE FEED PANEL COMPONENT ────────────────────────────────────────────────
+
+interface LiveFeedEvent {
+  id: string;
+  timestamp: number;
+  type: "incident" | "pit-stop" | "safety-car" | "position-change" | "dnf";
+  message: string;
+  driver?: string;
+}
+
+interface LiveFeedPanelProps {
+  lapData: LapSnapshot[] | null;
+  drivers: Driver[] | null;
+  currentLapIndex: number;
+  totalLaps: number;
+  raceIsLive: boolean;
+}
+
+const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
+  lapData, drivers, currentLapIndex, totalLaps, raceIsLive,
+}) => {
+  const [events, setEvents] = useState<LiveFeedEvent[]>([]);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const feedRef = useRef<HTMLDivElement>(null);
+  const lastLapRef = useRef(0);
+
+  // Auto-scroll to latest event
+  useEffect(() => {
+    if (autoScroll && feedRef.current) {
+      feedRef.current.scrollTop = feedRef.current.scrollHeight;
+    }
+  }, [events, autoScroll]);
+
+  // Detect race events based on lap transitions
+  useEffect(() => {
+    if (!lapData || !drivers || lapData.length === 0) return;
+
+    const lapIndex = Math.min(currentLapIndex, lapData.length - 1);
+    if (lapIndex === lastLapRef.current) return;
+
+    const currentLap = lapData[lapIndex];
+    const prevLap = lastLapRef.current > 0 ? lapData[lastLapRef.current - 1] : null;
+    lastLapRef.current = lapIndex;
+
+    const newEvents: LiveFeedEvent[] = [];
+
+    // Detect position changes
+    if (prevLap) {
+      prevLap.order.forEach((driverId, prevPos) => {
+        const newPos = currentLap.order.indexOf(driverId);
+        if (newPos !== prevPos && newPos !== -1) {
+          const driver = drivers.find(d => d.id === driverId);
+          const posChange = prevPos - newPos;
+          if (posChange > 0) {
+            newEvents.push({
+              id: `pos-${driverId}-${lapIndex}`,
+              timestamp: Date.now(),
+              type: "position-change",
+              message: `${driver?.name || driverId} gained a position!`,
+              driver: driverId,
+            });
+          } else if (posChange < -1) {
+            newEvents.push({
+              id: `pos-drop-${driverId}-${lapIndex}`,
+              timestamp: Date.now(),
+              type: "incident",
+              message: `${driver?.name || driverId} lost position`,
+              driver: driverId,
+            });
+          }
+        }
+      });
+    }
+
+    // Simulate safety car or random race events (in real scenario, from API)
+    if (lapIndex > 0 && lapIndex % 15 === 0 && Math.random() < 0.1) {
+      newEvents.push({
+        id: `sc-${lapIndex}`,
+        timestamp: Date.now(),
+        type: "safety-car",
+        message: "Safety Car deployed on circuit",
+      });
+    }
+
+    // Add simulated pit stop events
+    if (lapIndex > 5 && lapIndex % 20 === 15 && Math.random() < 0.15) {
+      const randomDriver = drivers[Math.floor(Math.random() * Math.min(drivers.length, 10))];
+      newEvents.push({
+        id: `pit-${randomDriver?.id}-${lapIndex}`,
+        timestamp: Date.now(),
+        type: "pit-stop",
+        message: `${randomDriver?.name || "Driver"} came into the pits`,
+        driver: randomDriver?.id,
+      });
+    }
+
+    // Add generated events to feed
+    if (newEvents.length > 0) {
+      setEvents(prev => [...prev, ...newEvents].slice(-15)); // Keep last 15 events
+    }
+  }, [lapData, drivers, currentLapIndex]);
+
+  if (!raceIsLive) {
+    return (
+      <div style={{
+        marginTop: 40,
+        padding: "20px",
+        backgroundColor: "rgba(0,0,0,0.3)",
+        borderRadius: 8,
+        border: "1px solid rgba(255,255,255,0.1)",
+        color: "var(--muted)",
+        textAlign: "center",
+      }}>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: 2,
+          textTransform: "uppercase",
+          marginBottom: 10,
+          fontFamily: "'Barlow Condensed', sans-serif",
+        }}>
+          Race Live Feed
+        </div>
+        <div style={{ fontSize: 12 }}>Live feed appears during active race days</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      marginTop: 40,
+      padding: "20px",
+      backgroundColor: "rgba(0,0,0,0.3)",
+      borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.1)",
+    }}>
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 15,
+      }}>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          letterSpacing: 2,
+          textTransform: "uppercase",
+          color: "var(--accent)",
+          fontFamily: "'Barlow Condensed', sans-serif",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}>
+          <span style={{ animation: "pulse 1.5s infinite", display: "inline-block" }}>●</span>
+          Race Live Feed
+        </div>
+        <label style={{ fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            checked={autoScroll}
+            onChange={e => setAutoScroll(e.target.checked)}
+            style={{ marginRight: 4 }}
+          />
+          Auto-scroll
+        </label>
+      </div>
+
+      <div
+        ref={feedRef}
+        style={{
+          height: "200px",
+          overflowY: "auto",
+          borderRadius: 4,
+          backgroundColor: "rgba(0,0,0,0.2)",
+          border: "1px solid rgba(255,255,255,0.05)",
+          padding: "12px",
+        }}
+      >
+        {events.length === 0 ? (
+          <div style={{ color: "var(--muted)", fontSize: 12, textAlign: "center", paddingTop: "60px" }}>
+            Waiting for race events…
+          </div>
+        ) : (
+          events.map(event => (
+            <div
+              key={event.id}
+              style={{
+                marginBottom: 10,
+                paddingBottom: 8,
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+                fontSize: 12,
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 8,
+              }}
+            >
+              <div style={{
+                minWidth: "60px",
+                color: event.type === "position-change" ? "var(--green)" : 
+                       event.type === "safety-car" ? "var(--yellow)" :
+                       event.type === "pit-stop" ? "var(--blue)" :
+                       event.type === "dnf" ? "var(--red)" : "var(--muted)",
+                fontWeight: 700,
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+              }}>
+                {event.type === "position-change" && "POS↑"}
+                {event.type === "incident" && "INC"}
+                {event.type === "safety-car" && "SC"}
+                {event.type === "pit-stop" && "PIT"}
+                {event.type === "dnf" && "DNF"}
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.7)" }}>
+                {event.message}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{
+        marginTop: 12,
+        fontSize: 10,
+        color: "var(--muted)",
+        fontStyle: "italic",
+      }}>
+        Updates every 15 seconds during live race. {events.length} event{events.length !== 1 ? "s" : ""} recorded.
+      </div>
+
+      <style>{`
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      `}</style>
+    </div>
+  );
+};
+
 // ── CIRCUIT MAP COMPONENT ────────────────────────────────────────────────────
 
 interface CircuitMapProps {
@@ -1969,6 +2206,14 @@ const RaceTrackerPage: FC = () => {
               drivers={drivers}
               currentLapIndex={lapIndex}
               circuitName={activeRace.circuit}
+            />
+
+            <LiveFeedPanel
+              lapData={effectiveLapData}
+              drivers={drivers}
+              currentLapIndex={lapIndex}
+              totalLaps={totalLaps}
+              raceIsLive={raceIsLive}
             />
           </>
         )
