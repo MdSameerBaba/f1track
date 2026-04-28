@@ -5,6 +5,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import React, { useState, useEffect, useRef, useCallback, type FC } from "react";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from "recharts";
 import type { Race, Driver, LapSnapshot, Highlight } from "./api/types";
 import { useSchedule, useStandings, useLiveRaceData, useQualifyingData, usePracticeData } from "./hooks/useF1Data";
 import type { QualifyingEntry, PracticeSession, PracticeEntry } from "./hooks/useF1Data";
@@ -1422,6 +1425,128 @@ const PracticeResults: FC<PracticeResultsProps> = ({ sessions, loading, error, r
   );
 };
 
+// ── POSITION CHART COMPONENT ─────────────────────────────────────────────────
+
+interface PositionChartProps {
+  lapData: LapSnapshot[];
+  drivers: Driver[] | null;
+  currentLapIndex: number;
+}
+
+const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapIndex }) => {
+  // Transform lapData into chart data format
+  const chartData = lapData.slice(0, currentLapIndex + 1).map((snapshot) => {
+    const dataPoint: Record<string, any> = {
+      lap: snapshot.lap,
+    };
+
+    // Create position entry for each driver in the order
+    snapshot.order.forEach((driverCode, index) => {
+      const driver = drivers?.find(d => d.id === driverCode);
+      const displayName = driver?.name.split(" ")[1] || driverCode; // Use last name
+      dataPoint[driverCode] = index + 1; // Position (1-based)
+    });
+
+    return dataPoint;
+  });
+
+  // Generate colors for each driver (from drivers array)
+  const getDriverColor = (driverCode: string): string => {
+    const driver = drivers?.find(d => d.id === driverCode);
+    return driver?.color || "#888";
+  };
+
+  // Get last known order to determine which drivers to show
+  const lastSnapshot = lapData[Math.min(currentLapIndex, lapData.length - 1)];
+  const activeDrivers = lastSnapshot?.order || [];
+
+  return (
+    <div style={{
+      marginTop: 40,
+      padding: "20px",
+      backgroundColor: "rgba(0,0,0,0.3)",
+      borderRadius: 8,
+      border: "1px solid rgba(255,255,255,0.1)",
+    }}>
+      <div style={{
+        fontSize: 14,
+        fontWeight: 700,
+        letterSpacing: 2,
+        textTransform: "uppercase",
+        marginBottom: 20,
+        color: "var(--accent)",
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}>
+        Position Changes Over Race
+      </div>
+
+      <div style={{ width: "100%", height: 400, position: "relative" }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+            <XAxis
+              dataKey="lap"
+              stroke="rgba(255,255,255,0.6)"
+              style={{ fontSize: 12 }}
+            />
+            <YAxis
+              reversed={true}
+              domain={[1, Math.max(20, activeDrivers.length)]}
+              stroke="rgba(255,255,255,0.6)"
+              style={{ fontSize: 12 }}
+              label={{ value: "Position", angle: -90, position: "insideLeft" }}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "rgba(0,0,0,0.8)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                borderRadius: 4,
+              }}
+              labelStyle={{ color: "#fff" }}
+              formatter={(value) => {
+                const pos = value as number;
+                return [`P${pos}`, ""];
+              }}
+            />
+            <Legend
+              wrapperStyle={{ paddingTop: "20px" }}
+              iconType="line"
+            />
+
+            {/* Render a line for each active driver */}
+            {activeDrivers.slice(0, 10).map((driverCode) => {
+              const driver = drivers?.find(d => d.id === driverCode);
+              const displayName = driver?.name.split(" ")[1] || driverCode;
+              return (
+                <Line
+                  key={driverCode}
+                  type="monotone"
+                  dataKey={driverCode}
+                  stroke={getDriverColor(driverCode)}
+                  dot={false}
+                  isAnimationActive={true}
+                  animationDuration={500}
+                  name={displayName}
+                  strokeWidth={2}
+                />
+              );
+            })}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={{
+        marginTop: 15,
+        fontSize: 11,
+        color: "var(--muted)",
+        fontStyle: "italic",
+      }}>
+        Showing top 10 drivers. Chart updates as race progresses.
+      </div>
+    </div>
+  );
+};
+
 // ── RACE TRACKER PAGE ────────────────────────────────────────────────────────
 
 const RaceTrackerPage: FC = () => {
@@ -1662,6 +1787,12 @@ const RaceTrackerPage: FC = () => {
               totalLaps={totalLaps}
               drivers={drivers}
               onScrub={handleScrub}
+            />
+
+            <PositionChart
+              lapData={effectiveLapData}
+              drivers={drivers}
+              currentLapIndex={lapIndex}
             />
           </>
         )
