@@ -1,0 +1,118 @@
+{
+  "teams": [
+    {
+      "id": "mercedes",
+      "name": "Mercedes-AMG Petronas",
+      "color": "#00d4be",
+      "base": "Brackley, UK",
+      "principal": "Toto Wolff",
+      "technicalDirector": "James Allison",
+      "chassisName": "W17",
+      "founded": 1954,
+      "championships": 8,
+      "drivers": [
+        {
+          "code": "HAM",
+          "name": "Lewis Hamilton",
+          "number": 44,
+          "contractUntil": 2026,
+          "role": "Lead Driver"
+        },
+        {
+          "code": "RUS",
+          "name": "George Russell",
+          "number": 63,
+          "contractUntil": 2025,
+          "role": "Second Driver"
+        }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Toto Wolff" },
+        { "role": "Chief Technical Officer", "name": "James Allison" },
+        { "role": "Chief Strategist", "name": "Will Joseph" },
+        { "role": "Chief Engineer - Aero", "name": "Dirk de Beer" }
+      ],
+      "description": "The eight-time world champions are pursuing their ninth consecutive constructors' championship with the innovative W17, featuring active aero technology.",
+      "recentUpdates": [
+        { "race": 1, "update": "New MGU-K packaging reduces weight by 8kg" },
+        { "race": 1, "update": "Front wing active element calibrated for 15° range" }
+      ]
+    },
+    {
+      "id": "redbull",
+      "name": "Red Bull Racing Honda RBPT",
+      "color": "#1e3050",
+      "base": "Milton Keynes, UK",
+      "principal": "Christian Horner",
+      "technicalDirector": "Peter Bonnington",
+      "chassisName": "RB22",
+      "founded": 2005,
+      "championships": 5,
+      "drivers": [
+        {
+          "code": "VER",
+          "name": "Max Verstappen",
+          "number": 1,
+          "contractUntil": 2028,
+          "role": "Lead Driver"
+        },
+        {
+          "code": "PER",
+          "name": "Sergio Pérez",
+          "number": 11,
+          "contractUntil": 2026,
+          "role": "Second Driver"
+        }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Christian Horner" },
+        { "role": "Technical Director", "name": "Peter Bonnington" },
+        { "role": "Chief Strategy Officer", "name": "GP Strategist" },
+        { "role": "Chief Engineer", "name": "Dan Fallows" }
+      ],
+      "description": "Red Bull Racing enters a new era with Honda RBPT's new hybrid power unit, focusing on 2026 innovation with the all-new RB22 chassis.",
+      "recentUpdates": [
+        { "race": 1, "update": "New hybrid architecture integrated smoothly in testing" },
+        { "race": 1, "update": "Active aero system shows 0.3s potential in simulation" }
+      ]
+    },
+    {
+      "id": "ferrari",
+      "name": "Scuderia Ferrari",
+      "color": "#dc0000",
+      "base": "Maranello, Italy",
+      "principal": "Fred Vasseur",
+      "technicalDirector": "Enrico Cardile",
+      "chassisName": "SF26",
+      "founded": 1950,
+      "championships": 16,
+      "drivers": [
+        {
+          "code": "LEC",
+          "name": "Charles Leclerc",
+          "number": 16,
+          "contractUntil": 2027,
+          "role": "Lead Driver"
+        },
+        {
+          "code": "SAI",
+          "name": "Oscar Sainz",
+          "number": 55,
+          "contractUntil": 2026,
+          "role": "Second Driver"
+        }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Fred Vasseur" },
+        { "role": "Technical Director", "name": "Enrico Cardile" },
+        { "role": "Sporting Director", "name": "Laurent Mekies" },
+        { "role": "Chief Engineer", "name": "Fabio Montecchi" }
+      ],
+      "description": "The Scuderia is determined to close the gap with new regulations, bringing innovative aero solutions and refined combustion engine technology.",
+      "recentUpdates": [
+        { "race": 1, "update": "New sidepod design reduces drag by 2.5%" },
+        { "race": 1, "update": "Engine mapping optimized for new MGU-K deployment" }
+      ]
+    }
+  ]
+}

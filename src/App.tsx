@@ -15,7 +15,7 @@ import { getCircuitInfo, type CircuitInfo } from "./data/circuits";
 
 const SEASON = 2026;
 
-type PageTab = "calendar" | "race" | "standings";
+type PageTab = "calendar" | "race" | "standings" | "regulations" | "teams" | "drivers" | "constructor-standings";
 type RaceSection = "fri" | "sat" | "race";
 type SpeedOption = { label: string; value: number };
 
@@ -1992,6 +1992,352 @@ const StandingsPage: FC = () => {
   );
 };
 
+// ── REGULATIONS PAGE ─────────────────────────────────────────────────────────
+
+const RegulationsPage: FC = () => {
+  const [regulations, setRegulations] = React.useState<any>(null);
+  const [selectedYear, setSelectedYear] = React.useState(2026);
+
+  React.useEffect(() => {
+    fetch("/src/data/regulations.json")
+      .then(r => r.json())
+      .then(data => setRegulations(data))
+      .catch(() => console.warn("Regulations data not available"));
+  }, []);
+
+  const yearRegs = regulations?.regulations?.filter((r: any) => r.year === selectedYear) ?? [];
+
+  return (
+    <div className="page">
+      <div className="page-title">Regulations & Rules</div>
+      <div style={{ marginBottom: 24, display: "flex", gap: 12 }}>
+        {[2024, 2025, 2026].map(y => (
+          <button
+            key={y}
+            className={`race-select-btn${y === selectedYear ? " active" : ""}`}
+            onClick={() => setSelectedYear(y)}
+            style={{ cursor: "pointer" }}
+          >
+            {y}
+          </button>
+        ))}
+      </div>
+
+      {!yearRegs || yearRegs.length === 0 ? (
+        <div style={{ padding: 60, textAlign: "center", color: "var(--muted)" }}>
+          No regulations data available
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 24 }}>
+          {yearRegs.map((cat: any, i: number) => (
+            <div key={i} style={{
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              borderRadius: 4,
+              padding: "24px 20px",
+            }}>
+              <div style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontSize: 20,
+                fontWeight: 800,
+                letterSpacing: 1,
+                textTransform: "uppercase" as const,
+                color: "var(--text)",
+                marginBottom: 16,
+              }}>
+                {cat.category}
+              </div>
+              <div style={{ display: "grid", gap: 14 }}>
+                {cat.changes.map((change: any, j: number) => (
+                  <div key={j} style={{
+                    borderLeft: "3px solid var(--red)",
+                    paddingLeft: 16,
+                  }}>
+                    <div style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: 16,
+                      color: "var(--text)",
+                      marginBottom: 6,
+                    }}>
+                      {change.title}
+                    </div>
+                    <div style={{
+                      fontSize: 13,
+                      color: "var(--muted)",
+                      marginBottom: 8,
+                      lineHeight: 1.6,
+                    }}>
+                      {change.description}
+                    </div>
+                    <div style={{
+                      fontSize: 11,
+                      color: "var(--text)",
+                      background: "var(--surface2)",
+                      padding: "8px 12px",
+                      borderRadius: 3,
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      letterSpacing: 0.5,
+                    }}>
+                      <strong>IMPACT:</strong> {change.impact}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── TEAMS PAGE ───────────────────────────────────────────────────────────────
+
+const TeamsPage: FC = () => {
+  const [teams, setTeams] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    fetch("/src/data/teams.json")
+      .then(r => r.json())
+      .then(data => setTeams(data.teams))
+      .catch(() => console.warn("Teams data not available"));
+  }, []);
+
+  return (
+    <div className="page">
+      <div className="page-title">Teams Overview</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginTop: 24 }}>
+        {teams.map(team => (
+          <div key={team.id} style={{
+            background: "var(--surface)",
+            border: `1px solid ${team.color}33`,
+            borderRadius: 4,
+            padding: 20,
+            cursor: "pointer",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = `${team.color}99`;
+            e.currentTarget.style.boxShadow = `0 0 12px ${team.color}22`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = `${team.color}33`;
+            e.currentTarget.style.boxShadow = "none";
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+              <div style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: team.color,
+                boxShadow: `0 0 12px ${team.color}`,
+              }} />
+              <div>
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 800,
+                  fontSize: 18,
+                  color: "var(--text)",
+                  letterSpacing: 0.5,
+                  textTransform: "uppercase" as const,
+                }}>
+                  {team.name}
+                </div>
+                <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, textTransform: "uppercase" as const }}>
+                  {team.base}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gap: 8, fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
+              <div>👤 <strong>Principal:</strong> {team.principal}</div>
+              <div>🏗️ <strong>Technical Director:</strong> {team.technicalDirector}</div>
+              <div>🏁 <strong>Chassis:</strong> {team.chassisName}</div>
+              <div>🏆 <strong>Championships:</strong> {team.championships}</div>
+            </div>
+            <div style={{ fontSize: 12, color: "var(--muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              {team.description}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── DRIVERS PAGE ─────────────────────────────────────────────────────────────
+
+const DriversPage: FC = () => {
+  const [drivers, setDrivers] = React.useState<any[]>([]);
+  const { races: yearRaces } = useSchedule(2026);
+
+  React.useEffect(() => {
+    fetch("/src/data/drivers-extra.json")
+      .then(r => r.json())
+      .then(data => setDrivers(data.drivers))
+      .catch(() => console.warn("Drivers data not available"));
+  }, []);
+
+  return (
+    <div className="page">
+      <div className="page-title">Driver Profiles</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, marginTop: 24 }}>
+        {drivers.map(driver => (
+          <div key={driver.code} style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: 4,
+            overflow: "hidden",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-4px)";
+            e.currentTarget.style.borderColor = "var(--red)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.borderColor = "var(--border)";
+          }}>
+            <div style={{
+              padding: 16,
+              borderBottom: "1px solid var(--border)",
+            }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                <div style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: "50%",
+                  background: "var(--surface2)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 32,
+                  fontWeight: 900,
+                }}>
+                  {driver.code.charAt(0)}
+                </div>
+                <div>
+                  <div style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 800,
+                    fontSize: 18,
+                    color: "var(--text)",
+                    letterSpacing: 0.5,
+                  }}>
+                    {driver.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", letterSpacing: 1, marginTop: 4 }}>
+                    #{driver.number} · {driver.nationality}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style={{ padding: 16, display: "grid", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" as const, fontWeight: 700 }}>Career Stats</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <div style={{ background: "var(--surface2)", padding: 10, borderRadius: 3, textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{driver.careerHighlights.worldChampionships}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>TITLES</div>
+                  </div>
+                  <div style={{ background: "var(--surface2)", padding: 10, borderRadius: 3, textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{driver.careerHighlights.raceWins}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>WINS</div>
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 10 }}>
+                  <div style={{ background: "var(--surface2)", padding: 10, borderRadius: 3, textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{driver.careerHighlights.polePositions}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>POLES</div>
+                  </div>
+                  <div style={{ background: "var(--surface2)", padding: 10, borderRadius: 3, textAlign: "center" }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{driver.careerHighlights.fastestLaps}</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>FASTEST LAPS</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: 1, marginBottom: 6, textTransform: "uppercase" as const, fontWeight: 700 }}>Specialties</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {driver.specialties.map((s: string) => (
+                    <span key={s} style={{
+                      fontSize: 11,
+                      padding: "4px 10px",
+                      background: "var(--red-dim)",
+                      border: "1px solid var(--red)",
+                      color: "var(--red)",
+                      borderRadius: 3,
+                      fontWeight: 600,
+                    }}>
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ── CONSTRUCTOR STANDINGS PAGE ───────────────────────────────────────────────
+
+const ConstructorStandingsPage: FC = () => {
+  const { races: yearRaces } = useSchedule(2026);
+  const [constructors, setConstructors] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    // For now, display placeholder — would fetch from Jolpica standings + compute constructor points
+    const mockConstructors = [
+      { name: "Mercedes", points: 45, wins: 2, color: "#00d4be" },
+      { name: "Red Bull Racing", points: 38, wins: 1, color: "#1e3050" },
+      { name: "Ferrari", points: 32, wins: 0, color: "#dc0000" },
+    ];
+    setConstructors(mockConstructors);
+  }, []);
+
+  return (
+    <div className="page">
+      <div className="page-title">Constructor Championship</div>
+      <div className="standings-wrap" style={{ marginTop: 24 }}>
+        <table className="standings-table">
+          <thead>
+            <tr>
+              <th style={{ width: 60, textAlign: "center" }}>POS</th>
+              <th>TEAM</th>
+              <th style={{ width: 100, textAlign: "right" }}>POINTS</th>
+              <th style={{ width: 80, textAlign: "center" }}>WINS</th>
+            </tr>
+          </thead>
+          <tbody>
+            {constructors.map((c, i) => (
+              <tr key={c.name}>
+                <td style={{ textAlign: "center", fontWeight: 700, fontSize: 18 }}>{i + 1}</td>
+                <td>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      background: c.color,
+                      boxShadow: `0 0 8px ${c.color}`,
+                    }} />
+                    <span>{c.name}</span>
+                  </div>
+                </td>
+                <td style={{ textAlign: "right", fontWeight: 700, fontSize: 16 }}>{c.points}</td>
+                <td style={{ textAlign: "center" }}>{c.wins}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
 // ── ROOT APP ─────────────────────────────────────────────────────────────────
 
 const F1TrackApp: FC = () => {
@@ -2012,6 +2358,14 @@ const F1TrackApp: FC = () => {
             </button>
             <button className={`nav-tab${tab === "standings" ? " active" : ""}`}
               onClick={() => setTab("standings")}>STANDINGS</button>
+            <button className={`nav-tab${tab === "constructor-standings" ? " active" : ""}`}
+              onClick={() => setTab("constructor-standings")}>CONSTRUCTORS</button>
+            <button className={`nav-tab${tab === "teams" ? " active" : ""}`}
+              onClick={() => setTab("teams")}>TEAMS</button>
+            <button className={`nav-tab${tab === "drivers" ? " active" : ""}`}
+              onClick={() => setTab("drivers")}>DRIVERS</button>
+            <button className={`nav-tab${tab === "regulations" ? " active" : ""}`}
+              onClick={() => setTab("regulations")}>REGS</button>
           </div>
           <div className="nav-season">{SEASON}</div>
         </nav>
@@ -2019,6 +2373,10 @@ const F1TrackApp: FC = () => {
         {tab === "calendar" && <CalendarPage />}
         {tab === "race" && <RaceTrackerPage />}
         {tab === "standings" && <StandingsPage />}
+        {tab === "constructor-standings" && <ConstructorStandingsPage />}
+        {tab === "teams" && <TeamsPage />}
+        {tab === "drivers" && <DriversPage />}
+        {tab === "regulations" && <RegulationsPage />}
       </div>
     </>
   );

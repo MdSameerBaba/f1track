@@ -1,0 +1,78 @@
+{
+  "regulations": [
+    {
+      "year": 2026,
+      "category": "Power Units",
+      "changes": [
+        {
+          "title": "50/50 Hybrid System",
+          "description": "New 50/50 power split between V6 turbocharged ICE and MGU-K (Motor Generator Unit - Kinetic). MGU-H removed.",
+          "impact": "Massive changes to fuel flow, turbo tech, and harvesting strategies"
+        },
+        {
+          "title": "Increased MGU-K Power",
+          "description": "MGU-K output increased to 160kW (from 120kW), deployable throughout the lap",
+          "impact": "Allows for lap-long assistance, improved acceleration efficiency"
+        },
+        {
+          "title": "Fuel Flow Increase",
+          "description": "Fuel flow limit raised to 40 kg/h to maintain performance with new power distribution",
+          "impact": "Sustains power output despite hybrid adjustments"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "category": "Aerodynamics",
+      "changes": [
+        {
+          "title": "Active Aerodynamics",
+          "description": "Front wing and rear wing endplates can actively adjust mid-corner for drag reduction on straights",
+          "impact": "Estimated 30-50kW increase in top speed"
+        },
+        {
+          "title": "Simplified Front Wing",
+          "description": "Fewer elements, simplified design to reduce downforce-generating complexity",
+          "impact": "Reduced drag but also reduced high-speed stability"
+        },
+        {
+          "title": "No DRS System",
+          "description": "Drag Reduction System completely removed. Active aero replaces all DRS functionality",
+          "impact": "Fundamentally changes overtaking dynamics"
+        }
+      ]
+    },
+    {
+      "year": 2026,
+      "category": "Sporting",
+      "changes": [
+        {
+          "title": "Sprint Format Extended",
+          "description": "Sprint now held on Saturday with 100km distance (increased from 100km), determines grid for main race",
+          "impact": "Three race days instead of two; strategic tire management crucial"
+        },
+        {
+          "title": "Penalty Reform",
+          "description": "Grid penalties now capped at 10 positions. Previously unlimited. Encourages more aggressive racing",
+          "impact": "Drivers less penalized for technical infractions"
+        },
+        {
+          "title": "Cost Cap Adjustment",
+          "description": "Cost cap reduced to $130M USD from $142M to improve competitive equity",
+          "impact": "Smaller budgets force harder technical prioritization"
+        }
+      ]
+    },
+    {
+      "year": 2025,
+      "category": "Aerodynamics",
+      "changes": [
+        {
+          "title": "Reduced Downforce",
+          "description": "Simplified rear wing and reduced floor area to reduce mechanical grip",
+          "impact": "Less downforce but also less tire wear"
+        }
+      ]
+    }
+  ]
+}

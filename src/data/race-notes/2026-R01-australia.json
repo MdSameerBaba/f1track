@@ -1,0 +1,33 @@
+{
+  "round": 1,
+  "country": "Australia",
+  "raceDate": "2026-03-08",
+  "qualifying": {
+    "headline": "Russell Claims Pole at Melbourne",
+    "incidents": [
+      {
+        "driver": "VER",
+        "session": "Q1",
+        "type": "early_exit",
+        "description": "Traffic in final sector cost Verstappen in Q1, eliminated at P16",
+        "impact": "Starts P16"
+      }
+    ],
+    "notes": "Russell takes pole with 1:18.518, Antonelli qualifies P2"
+  },
+  "race": {
+    "headline": "Hamilton Dominates Season Opener",
+    "keyMoments": [
+      { "lap": 12, "description": "Safety car after Stroll spins at Turn 6" },
+      { "lap": 34, "description": "Norris overtakes Leclerc for P3 with DRS" },
+      { "lap": 51, "description": "Fastest lap goes to Norris" }
+    ],
+    "driverOfTheDay": "HAM",
+    "fastestLap": { "driver": "NOR", "time": "1:19.432" }
+  },
+  "practice": {
+    "fp1": "Leclerc fastest in FP1, 1:20.267",
+    "fp2": "Rain-affected session, limited running. Russell quickest in dry conditions",
+    "fp3": "Red flag after Tsunoda hydraulics failure at Turn 13. Recovered with 10 mins remaining"
+  }
+}

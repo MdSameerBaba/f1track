@@ -1,0 +1,79 @@
+{
+  "drivers": [
+    {
+      "code": "HAM",
+      "name": "Lewis Hamilton",
+      "number": 44,
+      "dateOfBirth": "1985-01-07",
+      "nationality": "British",
+      "team": "Mercedes",
+      "careerHighlights": {
+        "worldChampionships": 7,
+        "raceWins": 103,
+        "polePositions": 104,
+        "fastestLaps": 65
+      },
+      "biography": "Lewis Carl Davidson Hamilton is a British racing driver. He is the most decorated driver in Formula One history, with seven world championships and is the first and only black driver to race in the series.",
+      "specialties": ["Wet weather", "Long runs", "Tire management"],
+      "contract": {
+        "team": "Mercedes",
+        "until": 2026,
+        "status": "Active"
+      },
+      "personalBest": {
+        "trackType": "Street circuit",
+        "favoriteCircuit": "Monaco"
+      }
+    },
+    {
+      "code": "VER",
+      "name": "Max Verstappen",
+      "number": 1,
+      "dateOfBirth": "1997-12-30",
+      "nationality": "Dutch",
+      "team": "Red Bull Racing",
+      "careerHighlights": {
+        "worldChampionships": 2,
+        "raceWins": 51,
+        "polePositions": 29,
+        "fastestLaps": 31
+      },
+      "biography": "Max Emilian Verstappen is a Dutch racing driver and the reigning World Champion. Known for his aggressive driving style and exceptional car control, he is one of the most talented drivers of his generation.",
+      "specialties": ["High-speed corners", "Overtaking", "Racecraft"],
+      "contract": {
+        "team": "Red Bull Racing",
+        "until": 2028,
+        "status": "Active"
+      },
+      "personalBest": {
+        "trackType": "High-speed circuit",
+        "favoriteCircuit": "Monza"
+      }
+    },
+    {
+      "code": "RUS",
+      "name": "George Russell",
+      "number": 63,
+      "dateOfBirth": "1998-02-15",
+      "nationality": "British",
+      "team": "Mercedes",
+      "careerHighlights": {
+        "worldChampionships": 0,
+        "raceWins": 1,
+        "polePositions": 1,
+        "fastestLaps": 2
+      },
+      "biography": "George Russell is a British racing driver with Mercedes. Known for his consistency and clean driving, he is considered one of the brightest prospects in Formula One.",
+      "specialties": ["Consistency", "Qualifying", "Car development"],
+      "contract": {
+        "team": "Mercedes",
+        "until": 2025,
+        "status": "Active - Renewal discussions ongoing"
+      },
+      "personalBest": {
+        "trackType": "Modern circuit",
+        "favoriteCircuit": "La Rousse"
+      }
+    }
+  ]
+}
