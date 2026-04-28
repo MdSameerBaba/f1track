@@ -84,31 +84,41 @@ const DataBadge: FC<{ dataSource: "openf1" | "jolpica" | "simulation"; error?: s
 // ── LOADING SKELETON ─────────────────────────────────────────────────────────
 
 const LoadingSkeleton: FC<{ count?: number }> = ({ count = 6 }) => (
-  <div className="calendar-grid">
-    {Array.from({ length: count }).map((_, i) => (
-      <div key={i} className="race-card" style={{ opacity: 0.4 }}>
-        <div style={{
-          height: 12, width: "40%", background: "var(--surface2)",
-          borderRadius: 2, marginBottom: 12,
-        }} />
-        <div style={{
-          height: 24, width: "70%", background: "var(--surface2)",
-          borderRadius: 2, marginBottom: 6,
-        }} />
-        <div style={{
-          height: 14, width: "50%", background: "var(--surface2)",
-          borderRadius: 2, marginBottom: 16,
-        }} />
-        <div style={{ display: "flex", gap: 6 }}>
-          {[1, 2, 3].map(n => (
-            <div key={n} style={{
-              flex: 1, height: 44, background: "var(--surface2)", borderRadius: 3,
-            }} />
-          ))}
+  <>
+    <style>{`
+      @keyframes shimmer {
+        0% { background-position: -1000px 0; }
+        100% { background-position: 1000px 0; }
+      }
+      .skeleton-loader {
+        animation: shimmer 2s infinite;
+        background: linear-gradient(90deg, var(--surface2) 25%, var(--surface3) 50%, var(--surface2) 75%);
+        background-size: 1000px 100%;
+      }
+    `}</style>
+    <div className="calendar-grid">
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="race-card" style={{ opacity: 0.6 }}>
+          <div className="skeleton-loader" style={{
+            height: 12, width: "40%", borderRadius: 2, marginBottom: 12,
+          }} />
+          <div className="skeleton-loader" style={{
+            height: 24, width: "70%", borderRadius: 2, marginBottom: 6,
+          }} />
+          <div className="skeleton-loader" style={{
+            height: 14, width: "50%", borderRadius: 2, marginBottom: 16,
+          }} />
+          <div style={{ display: "flex", gap: 6 }}>
+            {[1, 2, 3].map(n => (
+              <div key={n} className="skeleton-loader" style={{
+                flex: 1, height: 44, borderRadius: 3,
+              }} />
+            ))}
+          </div>
         </div>
-      </div>
-    ))}
-  </div>
+      ))}
+    </div>
+  </>
 );
 
 // ── STYLES ───────────────────────────────────────────────────────────────────
@@ -192,9 +202,25 @@ const STYLES = `
     0%,100% { opacity: 1; transform: scale(1); }
     50%     { opacity: 0.35; transform: scale(0.65); }
   }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 
   /* ─── PAGE ─── */
-  .page { padding: 36px 32px; max-width: 1440px; margin: 0 auto; }
+  .page {
+    padding: 36px 32px;
+    max-width: 1440px;
+    margin: 0 auto;
+    animation: fadeIn 0.4s ease-out;
+  }
   .page-title {
     font-family: 'Barlow Condensed', sans-serif;
     font-weight: 900; font-size: 52px; letter-spacing: 2px;
@@ -993,7 +1019,7 @@ const STYLES = `
 
   /* ─── RESPONSIVE ─── */
   @media (max-width: 768px) {
-    .page { padding: 20px 16px; }
+    .page { padding: 20px 16px; animation: fadeIn 0.4s ease-out; }
     .page-title { font-size: 36px; }
     .nav { padding: 0 16px; }
     .nav-logo { margin-right: 16px; font-size: 18px; }
