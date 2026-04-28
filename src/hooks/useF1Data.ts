@@ -398,14 +398,34 @@ export interface QualifyingEntry {
   q2: string | null;
   q3: string | null;
   eliminated: "Q1" | "Q2" | null;
+  headshot?: string;
 }
 
-export function useQualifyingData(season: number, round: number) {
+export function useQualifyingData(season: number, round: number, countryName?: string) {
   const result = useAsync(async () => {
     if (!round || round <= 0) return null;
 
     const data = await jolpica.getQualifyingResults(season, round);
     if (!data || data.length === 0) return null;
+
+    // Try to fetch OpenF1 headshots if country is provided
+    let headshots: Record<string, string> = {};
+    if (countryName) {
+      try {
+        const sessions = await openf1.getSessions(season, countryName);
+        const qualiSession = sessions.find(s => s.session_name === "Qualifying");
+        if (qualiSession) {
+          const drivers = await openf1.getDrivers(qualiSession.session_key);
+          drivers.forEach(d => {
+            if (d.headshot_url) {
+              headshots[d.name_acronym] = d.headshot_url;
+            }
+          });
+        }
+      } catch (e) {
+        // Silently fail — headshots are optional
+      }
+    }
 
     const entries: QualifyingEntry[] = data.map(q => {
       const code = q.Driver.code ?? q.Driver.driverId.slice(0, 3).toUpperCase();
@@ -425,12 +445,13 @@ export function useQualifyingData(season: number, round: number) {
         q2: q.Q2 ?? null,
         q3: q.Q3 ?? null,
         eliminated,
+        headshot: headshots[code],
       };
     });
 
     entries.sort((a, b) => a.position - b.position);
     return entries;
-  }, [season, round]);
+  }, [season, round, countryName]);
 
   return {
     qualifying: result.data ?? null,
@@ -455,6 +476,7 @@ export interface PracticeEntry {
   sector3: number | null;
   lapCount: number;
   gap: string;           // "+0.469" or "LEADER"
+  headshot?: string;
 }
 
 export interface PracticeSession {
@@ -520,13 +542,14 @@ export function usePracticeData(season: number, countryName: string) {
             openf1.getLaps(ps.session_key),
           ]);
 
-          const numToDriver: Record<number, { code: string; name: string; team: string; flag: string }> = {};
+          const numToDriver: Record<number, { code: string; name: string; team: string; flag: string; headshot?: string }> = {};
           driverData.forEach(d => {
             numToDriver[d.driver_number] = {
               code: d.name_acronym,
               name: d.full_name ?? d.broadcast_name,
               team: d.team_name,
               flag: countryCodeToFlag(d.country_code),
+              headshot: d.headshot_url,
             };
           });
 
@@ -565,6 +588,7 @@ export function usePracticeData(season: number, countryName: string) {
                 sector3: lap.duration_sector_3,
                 lapCount: lapCounts[dnum] ?? 0,
                 gap: "",
+                headshot: d.headshot,
               };
             })
             .sort((a, b) => a.bestLap - b.bestLap);

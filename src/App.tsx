@@ -1241,6 +1241,19 @@ const QualifyingResults: FC<QualifyingResultsProps> = ({ qualifying, loading, er
                   <td>
                     <div className="quali-driver">
                       <div className="quali-team-bar" style={{ background: q.teamColor, color: q.teamColor }} />
+                      {q.headshot && (
+                        <img
+                          src={q.headshot}
+                          alt={q.name}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 3,
+                            objectFit: "cover",
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                           <span style={{ fontSize: 14 }}>{q.flag}</span>
@@ -1364,6 +1377,7 @@ const PracticeResults: FC<PracticeResultsProps> = ({ sessions, loading, error, r
               <td>
                 <div className="quali-driver">
                   <div className="quali-team-bar" style={{ background: e.teamColor, color: e.teamColor }} />
+                  {e.headshot && <img src={e.headshot} alt={e.name} style={{ width: 40, height: 40, borderRadius: 3, objectFit: "cover" }} />}
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <span style={{ fontSize: 14 }}>{e.flag}</span>
@@ -1453,7 +1467,7 @@ const RaceTrackerPage: FC = () => {
     qualifying: qualifyingData,
     loading: qualiLoading,
     error: qualiError,
-  } = useQualifyingData(selectedYear, activeRace?.round ?? 0);
+  } = useQualifyingData(selectedYear, activeRace?.round ?? 0, activeRace?.country);
 
   // Practice data
   const {
