@@ -1918,6 +1918,13 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
         {driverPositions.slice(0, 20).map(({ driverCode, driver, position }) => {
           const [x, y] = getCoords(position);
           const isHovered = hoveredDriver === driverCode;
+          
+          // Calculate offset for label to avoid overlap
+          const labelOffset = 12;
+          const angle = (position / 100) * Math.PI * 2;
+          const labelX = x + labelOffset * Math.cos(angle);
+          const labelY = y + labelOffset * Math.sin(angle);
+          
           return (
             <g key={driverCode}>
               <circle
@@ -1930,25 +1937,57 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
                 onMouseEnter={() => setHoveredDriver(driverCode)}
                 onMouseLeave={() => setHoveredDriver(null)}
               />
+              
+              {/* Always show driver code */}
+              <text
+                x={labelX}
+                y={labelY}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#fff"
+                fontSize="10"
+                fontWeight="700"
+                style={{ 
+                  pointerEvents: "none",
+                  textShadow: "0 0 4px rgba(0,0,0,0.8)",
+                  filter: "drop-shadow(0 0 2px rgba(0,0,0,0.9))"
+                }}
+                opacity={isHovered ? 1 : 0.9}
+              >
+                {driverCode}
+              </text>
+              
+              {/* Enhanced tooltip on hover with full name */}
               {isHovered && (
                 <>
                   <rect
-                    x={x - 35}
-                    y={y - 20}
-                    width="70"
-                    height="20"
-                    fill="rgba(0,0,0,0.9)"
-                    rx="2"
+                    x={x - 40}
+                    y={y - 25}
+                    width="80"
+                    height="22"
+                    fill="rgba(0,0,0,0.95)"
+                    rx="3"
+                    stroke="rgba(255,255,255,0.2)"
+                    strokeWidth="1"
                   />
                   <text
                     x={x}
-                    y={y - 6}
+                    y={y - 10}
                     textAnchor="middle"
                     fill="#fff"
                     fontSize="11"
                     fontWeight="700"
                   >
                     {driver?.name.split(" ")[1] || driverCode}
+                  </text>
+                  <text
+                    x={x}
+                    y={y + 3}
+                    textAnchor="middle"
+                    fill="rgba(255,255,255,0.7)"
+                    fontSize="9"
+                  >
+                    P{currentSnap.order.indexOf(driverCode) + 1}
                   </text>
                 </>
               )}
@@ -1963,7 +2002,7 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
         color: "var(--muted)",
         fontStyle: "italic",
       }}>
-        Hover over dots to see driver names. Positions are updated in real-time.
+        Driver codes shown always. Hover over dots to see full name and position.
       </div>
     </div>
   );
