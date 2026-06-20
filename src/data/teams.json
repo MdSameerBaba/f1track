@@ -1,129 +1,303 @@
 {
   "teams": [
     {
+      "id": "mclaren",
+      "name": "McLaren Formula 1 Team",
+      "color": "#FF8000",
+      "base": "Woking, UK",
+      "principal": "Andrea Stella",
+      "technicalDirector": "Peter Prodromou",
+      "chassisName": "MCL39",
+      "founded": 1963,
+      "championships": 9,
+      "logo": "https://placehold.co/600x200/FF8000/ffffff?text=McLaren",
+      "website": "https://www.mclaren.com/racing",
+      "twitter": "https://twitter.com/McLarenF1",
+      "instagram": "https://instagram.com/mclaren",
+      "drivers": [
+        { "code": "NOR", "name": "Lando Norris", "number": 4, "contractUntil": 2027, "role": "Lead Driver" },
+        { "code": "PIA", "name": "Oscar Piastri", "number": 81, "contractUntil": 2026, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Andrea Stella" },
+        { "role": "Chief Technical Officer", "name": "Peter Prodromou" },
+        { "role": "Chief Engineer", "name": "Rob Marshall" },
+        { "role": "Sporting Director", "name": "Will Joseph" }
+      ],
+      "description": "The 2024 Constructors' Champions return as title favourites. McLaren's resurgence has been built on a relentless development programme and an exceptionally cohesive driver pairing in Norris and Piastri.",
+      "recentUpdates": [
+        { "race": 1, "update": "New floor concept carries over championship-winning MCL38 concepts" },
+        { "race": 1, "update": "Upgraded brake-by-wire system for 2026 hybrid architecture" }
+      ]
+    },
+    {
+      "id": "ferrari",
+      "name": "Scuderia Ferrari HP",
+      "color": "#DC0000",
+      "base": "Maranello, Italy",
+      "principal": "Fred Vasseur",
+      "technicalDirector": "Loic Serra",
+      "chassisName": "SF-25",
+      "founded": 1950,
+      "championships": 16,
+      "logo": "https://placehold.co/600x200/DC0000/ffffff?text=Ferrari",
+      "website": "https://www.ferrari.com/en-EN/formula1",
+      "twitter": "https://twitter.com/ScuderiaFerrari",
+      "instagram": "https://instagram.com/ScuderiaFerrari",
+      "drivers": [
+        { "code": "LEC", "name": "Charles Leclerc", "number": 16, "contractUntil": 2029, "role": "Lead Driver" },
+        { "code": "HAM", "name": "Lewis Hamilton", "number": 44, "contractUntil": 2026, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Fred Vasseur" },
+        { "role": "Technical Director", "name": "Loic Serra" },
+        { "role": "Sporting Director", "name": "Diego Ioverno" },
+        { "role": "Head of Aerodynamics", "name": "Enrico Cardile" }
+      ],
+      "description": "The Prancing Horse enters a new chapter with Hamilton joining Leclerc, creating one of the most electric driver pairings in F1 history. The SF-25 is built to finally deliver Maranello their first drivers' championship since 2007.",
+      "recentUpdates": [
+        { "race": 1, "update": "New sidepod concept reduces drag on high-speed circuits" },
+        { "race": 1, "update": "Hamilton integrates seamlessly with Maranello engineering culture" }
+      ]
+    },
+    {
+      "id": "redbull",
+      "name": "Oracle Red Bull Racing",
+      "color": "#3671C6",
+      "base": "Milton Keynes, UK",
+      "principal": "Christian Horner",
+      "technicalDirector": "Pierre Waché",
+      "chassisName": "RB21",
+      "founded": 2005,
+      "championships": 6,
+      "logo": "https://placehold.co/600x200/3671C6/ffffff?text=Red+Bull",
+      "website": "https://www.redbullracing.com",
+      "twitter": "https://twitter.com/redbullracing",
+      "instagram": "https://instagram.com/redbullracing",
+      "drivers": [
+        { "code": "VER", "name": "Max Verstappen", "number": 1, "contractUntil": 2028, "role": "Lead Driver" },
+        { "code": "TSU", "name": "Yuki Tsunoda", "number": 22, "contractUntil": 2025, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Christian Horner" },
+        { "role": "Chief Technical Officer", "name": "Pierre Waché" },
+        { "role": "Head of Aerodynamics", "name": "Enrico Balbo" },
+        { "role": "Chief Strategy Officer", "name": "Hannah Schmitz" }
+      ],
+      "description": "Four-time constructors' champions and home of four-time world champion Max Verstappen. Red Bull enter 2025 determined to reclaim their dominance with the RB21 and a revamped technical leadership.",
+      "recentUpdates": [
+        { "race": 1, "update": "New active aero system shows promising simulation data" },
+        { "race": 1, "update": "Tsunoda replaces Perez and aims to maximise the RB21's potential" }
+      ]
+    },
+    {
       "id": "mercedes",
-      "name": "Mercedes-AMG Petronas",
-      "color": "#00d4be",
+      "name": "Mercedes-AMG Petronas F1 Team",
+      "color": "#27F4D2",
       "base": "Brackley, UK",
       "principal": "Toto Wolff",
       "technicalDirector": "James Allison",
-      "chassisName": "W17",
+      "chassisName": "W16",
       "founded": 1954,
       "championships": 8,
-      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/mercedes-amu-logo.png",
+      "logo": "https://placehold.co/600x200/27F4D2/111827?text=Mercedes",
       "website": "https://www.mercedes-amgpetronas.com",
       "twitter": "https://twitter.com/MercedesAMGF1",
       "instagram": "https://instagram.com/mercedesamgf1",
       "drivers": [
-        {
-          "code": "HAM",
-          "name": "Lewis Hamilton",
-          "number": 44,
-          "contractUntil": 2026,
-          "role": "Lead Driver"
-        },
-        {
-          "code": "RUS",
-          "name": "George Russell",
-          "number": 63,
-          "contractUntil": 2025,
-          "role": "Second Driver"
-        }
+        { "code": "RUS", "name": "George Russell", "number": 63, "contractUntil": 2025, "role": "Lead Driver" },
+        { "code": "ANT", "name": "Kimi Antonelli", "number": 12, "contractUntil": 2025, "role": "Second Driver" }
       ],
       "personnel": [
         { "role": "Team Principal", "name": "Toto Wolff" },
         { "role": "Chief Technical Officer", "name": "James Allison" },
         { "role": "Chief Strategist", "name": "Will Joseph" },
-        { "role": "Chief Engineer - Aero", "name": "Dirk de Beer" }
+        { "role": "Head of Aerodynamics", "name": "Dirk de Beer" }
       ],
-      "description": "The eight-time world champions are pursuing their ninth consecutive constructors' championship with the innovative W17, featuring active aero technology.",
+      "description": "After years of dominance, Mercedes enters a new era with Italian rookie Antonelli replacing Hamilton. Russell leads the charge as the Silver Arrows fight to reclaim their former glory with the new ground-effect hybrid regulations.",
       "recentUpdates": [
-        { "race": 1, "update": "New MGU-K packaging reduces weight by 8kg" },
-        { "race": 1, "update": "Front wing active element calibrated for 15° range" }
+        { "race": 1, "update": "Antonelli impresses in pre-season testing despite rookie tag" },
+        { "race": 1, "update": "W16 zero-pod concept evolved with revised cooling inlets" }
       ]
     },
     {
-      "id": "redbull",
-      "name": "Red Bull Racing Honda RBPT",
-      "color": "#1e3050",
-      "base": "Milton Keynes, UK",
-      "principal": "Christian Horner",
-      "technicalDirector": "Peter Bonnington",
-      "chassisName": "RB22",
-      "founded": 2005,
-      "championships": 5,
-      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/red-bull-racing-logo.png",
-      "website": "https://www.redbullracing.com",
-      "twitter": "https://twitter.com/redbullracing",
-      "instagram": "https://instagram.com/redbullracing",
-      "drivers": [
-        {
-          "code": "VER",
-          "name": "Max Verstappen",
-          "number": 1,
-          "contractUntil": 2028,
-          "role": "Lead Driver"
-        },
-        {
-          "code": "PER",
-          "name": "Sergio Pérez",
-          "number": 11,
-          "contractUntil": 2026,
-          "role": "Second Driver"
-        }
-      ],
-      "personnel": [
-        { "role": "Team Principal", "name": "Christian Horner" },
-        { "role": "Technical Director", "name": "Peter Bonnington" },
-        { "role": "Chief Strategy Officer", "name": "GP Strategist" },
-        { "role": "Chief Engineer", "name": "Dan Fallows" }
-      ],
-      "description": "Red Bull Racing enters a new era with Honda RBPT's new hybrid power unit, focusing on 2026 innovation with the all-new RB22 chassis.",
-      "recentUpdates": [
-        { "race": 1, "update": "New hybrid architecture integrated smoothly in testing" },
-        { "race": 1, "update": "Active aero system shows 0.3s potential in simulation" }
-      ]
-    },
-    {
-      "id": "ferrari",
-      "name": "Scuderia Ferrari",
-      "color": "#dc0000",
-      "base": "Maranello, Italy",
-      "principal": "Fred Vasseur",
+      "id": "aston_martin",
+      "name": "Aston Martin Aramco F1 Team",
+      "color": "#229971",
+      "base": "Silverstone, UK",
+      "principal": "Mike Krack",
       "technicalDirector": "Enrico Cardile",
-      "chassisName": "SF26",
-      "founded": 1950,
-      "championships": 16,
-      "logo": "https://media.formula1.com/content/dam/fom-website/teams/2024/ferrari-logo.png",
-      "website": "https://www.ferrari.com/en-EN/formula1",
-      "twitter": "https://twitter.com/ScuderiaFerrari",
-      "instagram": "https://instagram.com/ScuderiaFerrari",
+      "chassisName": "AMR25",
+      "founded": 2018,
+      "championships": 0,
+      "logo": "https://placehold.co/600x200/229971/ffffff?text=Aston+Martin",
+      "website": "https://www.astonmartinf1.com",
+      "twitter": "https://twitter.com/AstonMartinF1",
+      "instagram": "https://instagram.com/astonmartinf1",
       "drivers": [
-        {
-          "code": "LEC",
-          "name": "Charles Leclerc",
-          "number": 16,
-          "contractUntil": 2027,
-          "role": "Lead Driver"
-        },
-        {
-          "code": "SAI",
-          "name": "Oscar Sainz",
-          "number": 55,
-          "contractUntil": 2026,
-          "role": "Second Driver"
-        }
+        { "code": "ALO", "name": "Fernando Alonso", "number": 14, "contractUntil": 2026, "role": "Lead Driver" },
+        { "code": "STR", "name": "Lance Stroll", "number": 18, "contractUntil": 2026, "role": "Second Driver" }
       ],
       "personnel": [
-        { "role": "Team Principal", "name": "Fred Vasseur" },
+        { "role": "Team Principal", "name": "Mike Krack" },
         { "role": "Technical Director", "name": "Enrico Cardile" },
-        { "role": "Sporting Director", "name": "Laurent Mekies" },
-        { "role": "Chief Engineer", "name": "Fabio Montecchi" }
+        { "role": "Sporting Director", "name": "Andy Stevenson" },
+        { "role": "Chief Aerodynamicist", "name": "Tom McCullough" }
       ],
-      "description": "The Scuderia is determined to close the gap with new regulations, bringing innovative aero solutions and refined combustion engine technology.",
+      "description": "Lawrence Stroll's ambitious project continues to grow, bringing in Ferrari's Enrico Cardile to lead technical operations. With Alonso's experience and vast investment in the AMR Technology Campus, Aston Martin aim for consistent front-running results.",
       "recentUpdates": [
-        { "race": 1, "update": "New sidepod design reduces drag by 2.5%" },
-        { "race": 1, "update": "Engine mapping optimized for new MGU-K deployment" }
+        { "race": 1, "update": "New front suspension geometry improves mechanical grip" },
+        { "race": 1, "update": "Cardile begins first development cycle post-Ferrari move" }
+      ]
+    },
+    {
+      "id": "alpine",
+      "name": "BWT Alpine F1 Team",
+      "color": "#FF87BC",
+      "base": "Enstone, UK",
+      "principal": "Oliver Oakes",
+      "technicalDirector": "David Sanchez",
+      "chassisName": "A525",
+      "founded": 1981,
+      "championships": 2,
+      "logo": "https://placehold.co/600x200/FF87BC/ffffff?text=Alpine",
+      "website": "https://www.alpinef1.com",
+      "twitter": "https://twitter.com/AlpineF1Team",
+      "instagram": "https://instagram.com/alpinef1team",
+      "drivers": [
+        { "code": "GAS", "name": "Pierre Gasly", "number": 10, "contractUntil": 2025, "role": "Lead Driver" },
+        { "code": "COL", "name": "Franco Colapinto", "number": 43, "contractUntil": 2025, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Oliver Oakes" },
+        { "role": "Technical Director", "name": "David Sanchez" },
+        { "role": "Sporting Director", "name": "Alan Permane" },
+        { "role": "Chief Engineer", "name": "Matt Harman" }
+      ],
+      "description": "The French manufacturer enters 2025 with a fresh young leadership team. Under Oakes and Sanchez, Alpine are rebuilding towards front-running competitiveness, leaning on Gasly's experience alongside exciting talent Colapinto.",
+      "recentUpdates": [
+        { "race": 1, "update": "A525 shows improved correlation between simulation and track" },
+        { "race": 1, "update": "Colapinto making strong first impression in his second stint in F1" }
+      ]
+    },
+    {
+      "id": "williams",
+      "name": "Williams Racing",
+      "color": "#64C4FF",
+      "base": "Grove, UK",
+      "principal": "James Vowles",
+      "technicalDirector": "Pat Fry",
+      "chassisName": "FW47",
+      "founded": 1977,
+      "championships": 9,
+      "logo": "https://placehold.co/600x200/64C4FF/111827?text=Williams",
+      "website": "https://www.williamsf1.com",
+      "twitter": "https://twitter.com/WilliamsRacing",
+      "instagram": "https://instagram.com/williamsracing",
+      "drivers": [
+        { "code": "ALB", "name": "Alex Albon", "number": 23, "contractUntil": 2026, "role": "Lead Driver" },
+        { "code": "SAI", "name": "Carlos Sainz", "number": 55, "contractUntil": 2026, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "James Vowles" },
+        { "role": "Technical Director", "name": "Pat Fry" },
+        { "role": "Chief Aerodynamicist", "name": "Jost Capito" },
+        { "role": "Head of Vehicle Performance", "name": "Dave Robson" }
+      ],
+      "description": "Under Vowles' transformative leadership, Williams are on an impressive rebuild. The signing of Carlos Sainz alongside standout performer Albon signals genuine midfield ambition and is the clearest sign yet of Williams' resurgence.",
+      "recentUpdates": [
+        { "race": 1, "update": "Sainz settling into Grove operations and pushing development" },
+        { "race": 1, "update": "FW47 shows strong single-lap pace in Bahrain test sessions" }
+      ]
+    },
+    {
+      "id": "rb",
+      "name": "Visa Cash App RB F1 Team",
+      "color": "#6692FF",
+      "base": "Faenza, Italy",
+      "principal": "Laurent Mekies",
+      "technicalDirector": "Jody Egginton",
+      "chassisName": "VCARB 02",
+      "founded": 2006,
+      "championships": 0,
+      "logo": "https://placehold.co/600x200/6692FF/ffffff?text=VCARB",
+      "website": "https://www.visacashapprb.com",
+      "twitter": "https://twitter.com/visacashapprb",
+      "instagram": "https://instagram.com/visacashapprb",
+      "drivers": [
+        { "code": "LAW", "name": "Liam Lawson", "number": 30, "contractUntil": 2025, "role": "Lead Driver" },
+        { "code": "HAD", "name": "Isack Hadjar", "number": 6, "contractUntil": 2025, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Laurent Mekies" },
+        { "role": "Technical Director", "name": "Jody Egginton" },
+        { "role": "Chief Designer", "name": "Paolo Maierhofer" },
+        { "role": "Chief Strategist", "name": "Alberto Antonini" }
+      ],
+      "description": "Red Bull's junior team provides an exciting platform for the next generation of stars. With Lawson and rookie Hadjar, the Faenza-based squad is focused on discovering the next champion while battling for midfield honours.",
+      "recentUpdates": [
+        { "race": 1, "update": "Hadjar shows raw pace in debut season preparations" },
+        { "race": 1, "update": "Revised front wing specification boosts downforce balance" }
+      ]
+    },
+    {
+      "id": "haas",
+      "name": "MoneyGram Haas F1 Team",
+      "color": "#B6BABD",
+      "base": "Kannapolis, USA",
+      "principal": "Ayao Komatsu",
+      "technicalDirector": "Simone Resta",
+      "chassisName": "VF-25",
+      "founded": 2016,
+      "championships": 0,
+      "logo": "https://placehold.co/600x200/B6BABD/111827?text=Haas",
+      "website": "https://www.haasf1team.com",
+      "twitter": "https://twitter.com/HaasF1Team",
+      "instagram": "https://instagram.com/haasf1team",
+      "drivers": [
+        { "code": "OCO", "name": "Esteban Ocon", "number": 31, "contractUntil": 2026, "role": "Lead Driver" },
+        { "code": "BEA", "name": "Oliver Bearman", "number": 87, "contractUntil": 2026, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal", "name": "Ayao Komatsu" },
+        { "role": "Technical Director", "name": "Simone Resta" },
+        { "role": "Chief Engineer", "name": "Bernhard Seiger" },
+        { "role": "Head of Vehicle Dynamics", "name": "Ben Agathangelou" }
+      ],
+      "description": "The American team turns a new page with Ocon and promising British rookie Bearman. Under Komatsu's exacting leadership, Haas are laser-focused on eliminating reliability issues and extracting maximum performance from the VF-25.",
+      "recentUpdates": [
+        { "race": 1, "update": "Bearman looking impressive in only his second full F1 season" },
+        { "race": 1, "update": "Improved reliability protocols in place after 2024 issues" }
+      ]
+    },
+    {
+      "id": "kick_sauber",
+      "name": "Stake F1 Team Kick Sauber",
+      "color": "#52E252",
+      "base": "Hinwil, Switzerland",
+      "principal": "Mattia Binotto",
+      "technicalDirector": "James Key",
+      "chassisName": "C45",
+      "founded": 1993,
+      "championships": 0,
+      "logo": "https://placehold.co/600x200/52E252/111827?text=Kick+Sauber",
+      "website": "https://www.sauber-group.com/motorsport/formula-1",
+      "twitter": "https://twitter.com/stakef1team_ks",
+      "instagram": "https://instagram.com/kicksauber",
+      "drivers": [
+        { "code": "HUL", "name": "Nico Hulkenberg", "number": 27, "contractUntil": 2026, "role": "Lead Driver" },
+        { "code": "BOR", "name": "Gabriel Bortoleto", "number": 5, "contractUntil": 2026, "role": "Second Driver" }
+      ],
+      "personnel": [
+        { "role": "Team Principal & CEO", "name": "Mattia Binotto" },
+        { "role": "Technical Director", "name": "James Key" },
+        { "role": "Head of Aerodynamics", "name": "Alessandro Cinelli" },
+        { "role": "Performance Director", "name": "Gianluca Petecof" }
+      ],
+      "description": "On the cusp of transforming into the Audi works team from 2026, Sauber attracts exciting talent. F2 champion Bortoleto joins seasoned campaigner Hulkenberg as the Swiss outfit undergoes its most significant transformation in decades.",
+      "recentUpdates": [
+        { "race": 1, "update": "Audi power unit integration begins in Hinwil facility" },
+        { "race": 1, "update": "Bortoleto adapts quickly with backing from McLaren junior programme" }
       ]
     }
   ]

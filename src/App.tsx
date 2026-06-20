@@ -13,12 +13,14 @@ import { useSchedule, useStandings, useLiveRaceData, useQualifyingData, usePract
 import type { QualifyingEntry, PracticeSession, PracticeEntry } from "./hooks/useF1Data";
 import { FALLBACK_HIGHLIGHTS } from "./hooks/fallbackData";
 import { getCircuitInfo, type CircuitInfo } from "./data/circuits";
+import { getRadioFromFirestore, saveRadioToFirestore } from "./api/firebase";
+import * as IDBCache from "./api/cache";
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 
 const SEASON = 2026;
 
-type PageTab = "calendar" | "race" | "standings" | "regulations" | "teams" | "drivers" | "constructor-standings";
+type PageTab = "calendar" | "race" | "standings" | "regulations" | "teams" | "drivers" | "constructor-standings" | "news";
 type RaceSection = "fri" | "sat" | "race";
 type SpeedOption = { label: string; value: number };
 
@@ -1042,6 +1044,287 @@ const STYLES = `
     .fp-tabs { gap: 4px; padding: 10px 14px; }
     .fp-tab { padding: 6px 12px; font-size: 11px; }
   }
+
+  /* ─── DRIVER RADIO DRAWER ─── */
+  .drawer-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease;
+  }
+  .driver-drawer {
+    position: fixed; right: 0; top: 0; bottom: 0; z-index: 501;
+    width: 380px; max-width: 100vw;
+    background: #0a0b12;
+    border-left: 1px solid rgba(255,255,255,0.1);
+    display: flex; flex-direction: column;
+    animation: slideInRight 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    overflow: hidden;
+  }
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(0); }
+  }
+  .drawer-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    flex-shrink: 0;
+  }
+  .drawer-team-bar {
+    width: 4px; height: 48px; border-radius: 3px; flex-shrink: 0;
+  }
+  .drawer-driver-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px; font-weight: 900; color: #fff;
+    letter-spacing: 1px; line-height: 1.1;
+  }
+  .drawer-driver-sub {
+    font-size: 11px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .drawer-close {
+    margin-left: auto; background: none; border: none;
+    color: var(--muted); font-size: 20px; cursor: pointer;
+    padding: 8px; border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .drawer-close:hover { color: #fff; background: rgba(255,255,255,0.08); }
+  .drawer-body {
+    flex: 1; overflow-y: auto; padding: 20px;
+    display: flex; flex-direction: column; gap: 18px;
+  }
+  .drawer-section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 2.5px;
+    color: var(--red); text-transform: uppercase; margin-bottom: 10px;
+  }
+  .telemetry-dials {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  }
+  .telemetry-dial {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 10px;
+    text-align: center;
+  }
+  .dial-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 9px; color: var(--muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .dial-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 20px; font-weight: 700; color: #fff;
+  }
+  .dial-unit {
+    font-size: 9px; color: var(--muted); margin-top: 2px;
+  }
+  .radio-clip-list { display: flex; flex-direction: column; gap: 8px; }
+  .radio-clip {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px;
+  }
+  .radio-clip-meta {
+    font-size: 10px; color: var(--muted);
+    margin-bottom: 6px;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+  .radio-clip audio {
+    width: 100%; height: 32px;
+    filter: invert(1) hue-rotate(180deg);
+  }
+  .tyre-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 20px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ─── NEWS PAGE ─── */
+  .news-page { padding: 32px 28px; }
+  .news-ticker-bar {
+    display: flex; align-items: center; overflow: hidden;
+    background: rgba(225,6,0,0.08); border: 1px solid rgba(225,6,0,0.2);
+    border-radius: 4px; padding: 0 16px;
+    height: 36px; margin-bottom: 28px; gap: 14px;
+  }
+  .news-ticker-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 900; letter-spacing: 3px;
+    color: var(--red); text-transform: uppercase; white-space: nowrap;
+    border-right: 1px solid rgba(225,6,0,0.3); padding-right: 14px;
+    flex-shrink: 0;
+  }
+  .news-ticker-scroll {
+    flex: 1; overflow: hidden; white-space: nowrap;
+  }
+  .news-ticker-inner {
+    display: inline-block;
+    animation: ticker-scroll 30s linear infinite;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 13px; color: rgba(255,255,255,0.7);
+    letter-spacing: 0.5px;
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(100%); }
+    to   { transform: translateX(-100%); }
+  }
+  .news-controls {
+    display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; align-items: center;
+  }
+  .news-search {
+    flex: 1; min-width: 200px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 10px 14px;
+    color: var(--text); font-size: 14px; font-family: inherit;
+    outline: none; transition: border-color 0.2s;
+  }
+  .news-search:focus { border-color: var(--red); }
+  .news-search::placeholder { color: var(--muted); }
+  .news-filter-btn {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 8px 14px;
+    color: var(--muted); font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; cursor: pointer; transition: all 0.2s;
+  }
+  .news-filter-btn:hover, .news-filter-btn.active {
+    background: rgba(225,6,0,0.1); border-color: var(--red); color: var(--text);
+  }
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+  .news-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer; position: relative;
+  }
+  .news-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(225,6,0,0.3);
+    box-shadow: 0 12px 40px rgba(225,6,0,0.1);
+  }
+  .news-card-img {
+    width: 100%; height: 180px; object-fit: cover;
+    display: block; background: var(--surface2);
+  }
+  .news-card-img-placeholder {
+    width: 100%; height: 180px;
+    background: linear-gradient(135deg, var(--surface2) 0%, var(--surface3) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 40px;
+  }
+  .news-card-body { padding: 16px; }
+  .news-card-meta {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 8px;
+  }
+  .news-card-source {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--red);
+  }
+  .news-card-time {
+    font-size: 10px; color: var(--muted);
+    margin-left: auto;
+  }
+  .news-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 17px; font-weight: 700; color: var(--text);
+    line-height: 1.3; margin-bottom: 8px;
+    display: -webkit-box; -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .news-card-desc {
+    font-size: 12px; color: var(--muted);
+    line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .news-card-footer {
+    display: flex; align-items: center; gap: 8px;
+    padding-top: 10px; border-top: 1px solid var(--border);
+  }
+  .news-card-read-time {
+    font-size: 10px; color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+  .news-card-link {
+    margin-left: auto; font-size: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--red);
+    text-decoration: none;
+  }
+  .news-card-link:hover { text-decoration: underline; }
+  .news-loading {
+    text-align: center; padding: 80px 20px;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .news-empty {
+    text-align: center; padding: 60px 20px;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px; letter-spacing: 1.5px;
+  }
+
+  /* ─── CACHE STATUS CARD ─── */
+  .cache-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px;
+    margin-bottom: 20px;
+  }
+  .cache-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+    color: var(--red); text-transform: uppercase; margin-bottom: 14px;
+  }
+  .cache-stats {
+    display: flex; gap: 20px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .cache-stat-item {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px;
+    color: var(--muted);
+  }
+  .cache-stat-item strong { color: var(--text); margin-right: 4px; }
+  .cache-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cache-btn {
+    padding: 7px 14px; border-radius: 4px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; border: none; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cache-btn-primary { background: rgba(0,230,118,0.12); color: #00e676; }
+  .cache-btn-primary:hover { background: rgba(0,230,118,0.22); }
+  .cache-btn-danger  { background: rgba(255,82,82,0.12); color: #ff5252; }
+  .cache-btn-danger:hover  { background: rgba(255,82,82,0.22); }
+  .cache-btn-firebase { background: rgba(255,160,0,0.12); color: #ffa000; }
+  .cache-btn-firebase:hover { background: rgba(255,160,0,0.22); }
+  .cache-progress-bar {
+    height: 3px; border-radius: 2px;
+    background: var(--surface3); overflow: hidden;
+    margin-top: 10px;
+  }
+  .cache-progress-fill {
+    height: 100%; background: var(--green);
+    transition: width 0.4s ease;
+  }
 `;
 
 // ── LEADERBOARD COMPONENT ────────────────────────────────────────────────────
@@ -1052,9 +1335,10 @@ interface LeaderboardProps {
   totalLaps: number;
   drivers: Driver[];
   onScrub: (lap: number) => void;
+  onDriverClick?: (driverCode: string) => void;
 }
 
-const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drivers, onScrub }) => {
+const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drivers, onScrub, onDriverClick }) => {
   const prevOrderRef = useRef<string[]>([]);
   const [flashMap, setFlashMap] = useState<Record<string, "up" | "down">>({});
 
@@ -1136,7 +1420,9 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
             <div
               key={id}
               className={`lb-row${flash === "up" ? " gained" : flash === "down" ? " lost" : ""}`}
-              style={{ top: idx * ROW_H }}
+              style={{ top: idx * ROW_H, cursor: onDriverClick ? "pointer" : "default" }}
+              onClick={() => onDriverClick?.(id)}
+              title={onDriverClick ? `Click to view ${driver.name} telemetry` : undefined}
             >
               <div className={`pos-num${pos === 1 ? " p1" : pos === 2 ? " p2" : pos === 3 ? " p3" : ""}`}>
                 {String(pos).padStart(2, "0")}
@@ -2008,7 +2294,387 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
   );
 };
 
+// ── DRIVER COCKPIT DRAWER ────────────────────────────────────────────────────
+
+interface DriverDrawerProps {
+  driver: Driver | null;
+  sessionKey: number | null;
+  onClose: () => void;
+}
+
+const TYRE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  SOFT:        { label: "SOFT",        color: "#e10600", bg: "rgba(225,6,0,0.15)"        },
+  MEDIUM:      { label: "MEDIUM",      color: "#ffd700", bg: "rgba(255,215,0,0.12)"      },
+  HARD:        { label: "HARD",        color: "#e8e8f0", bg: "rgba(232,232,240,0.1)"     },
+  INTERMEDIATE:{ label: "INTER",       color: "#00c853", bg: "rgba(0,200,83,0.12)"       },
+  WET:         { label: "WET",         color: "#2979ff", bg: "rgba(41,121,255,0.15)"     },
+};
+
+const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) => {
+  const [radioClips, setRadioClips] = useState<Array<{ date: string; recording_url: string }>>([]);
+  const [radioLoading, setRadioLoading] = useState(false);
+  const [radioStatus, setRadioStatus] = useState<"idle" | "firestore-hit" | "api-fetched" | "none">("idle");
+
+  // Simulated telemetry — in a live race these would be polled from OpenF1 /car_data
+  const speed   = Math.floor(Math.random() * 80 + 240);
+  const rpm     = Math.floor(Math.random() * 3000 + 9000);
+  const gear    = Math.floor(Math.random() * 5 + 3);
+  const throttle= Math.floor(Math.random() * 40 + 60);
+  const brake   = throttle > 90 ? 0 : Math.floor(Math.random() * 20);
+  const drs     = Math.random() > 0.5;
+
+  const tyres = ["SOFT", "MEDIUM", "HARD"];
+  const currentTyre = tyres[Math.floor(Math.random() * tyres.length)];
+  const tyreAge = Math.floor(Math.random() * 20 + 1);
+  const tyreCfg = TYRE_CONFIG[currentTyre];
+
+  useEffect(() => {
+    if (!driver || !sessionKey) return;
+    setRadioLoading(true);
+    setRadioClips([]);
+    setRadioStatus("idle");
+
+    (async () => {
+      const driverNumber = driver.number;
+      console.log(`[Radio] Checking Firestore for session=${sessionKey} driver=${driverNumber}`);
+
+      // 1. Try Firestore first
+      const cached = await getRadioFromFirestore(sessionKey, driverNumber);
+      if (cached && cached.length > 0) {
+        console.log(`[Radio] Firestore HIT — ${cached.length} clips`);
+        setRadioClips(cached);
+        setRadioStatus("firestore-hit");
+        setRadioLoading(false);
+        return;
+      }
+
+      // 2. Fall back to OpenF1 API
+      console.log(`[Radio] Firestore MISS — fetching from OpenF1...`);
+      try {
+        const url = `https://api.openf1.org/v1/team_radio?session_key=${sessionKey}&driver_number=${driverNumber}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const clips = (data as any[]).map((c: any) => ({
+          date: c.date,
+          recording_url: c.recording_url,
+        }));
+        console.log(`[Radio] OpenF1 returned ${clips.length} clips`);
+        setRadioClips(clips);
+        setRadioStatus(clips.length > 0 ? "api-fetched" : "none");
+
+        // 3. Cache to Firestore
+        if (clips.length > 0) {
+          console.log("[Radio] Saving to Firestore...");
+          await saveRadioToFirestore(sessionKey, driverNumber, clips);
+          console.log("[Radio] Saved to Firestore ✓");
+        }
+      } catch (err) {
+        console.error("[Radio] Fetch error:", err);
+        setRadioStatus("none");
+      } finally {
+        setRadioLoading(false);
+      }
+    })();
+  }, [driver?.number, sessionKey]);
+
+  if (!driver) return null;
+
+  const formatDate = (d: string) => {
+    try {
+      const dt = new Date(d);
+      return dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    } catch { return d; }
+  };
+
+  return (
+    <>
+      <div className="drawer-overlay" onClick={onClose} />
+      <div className="driver-drawer">
+        {/* Header */}
+        <div className="drawer-header">
+          <div className="drawer-team-bar" style={{ background: driver.color }} />
+          <div>
+            <div className="drawer-driver-name">{driver.name}</div>
+            <div className="drawer-driver-sub">{driver.team} · #{driver.number}</div>
+          </div>
+          <button className="drawer-close" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="drawer-body">
+          {/* TELEMETRY DIALS */}
+          <div>
+            <div className="drawer-section-title">Live Telemetry</div>
+            <div className="telemetry-dials">
+              <div className="telemetry-dial">
+                <div className="dial-label">Speed</div>
+                <div className="dial-value" style={{ color: "#00e676" }}>{speed}</div>
+                <div className="dial-unit">km/h</div>
+              </div>
+              <div className="telemetry-dial">
+                <div className="dial-label">RPM</div>
+                <div className="dial-value" style={{ color: "#ffd700" }}>{rpm.toLocaleString()}</div>
+                <div className="dial-unit">rpm</div>
+              </div>
+              <div className="telemetry-dial">
+                <div className="dial-label">Gear</div>
+                <div className="dial-value">{gear}</div>
+                <div className="dial-unit">{drs ? "🟢 DRS" : "DRS OFF"}</div>
+              </div>
+            </div>
+
+            {/* Throttle / Brake bars */}
+            <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1 }}>
+                  <span>THROTTLE</span><span>{throttle}%</span>
+                </div>
+                <div style={{ height: 6, background: "var(--surface3)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${throttle}%`, background: "#00e676", borderRadius: 3, transition: "width 0.5s" }} />
+                </div>
+              </div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--muted)", marginBottom: 3, fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1 }}>
+                  <span>BRAKE</span><span>{brake}%</span>
+                </div>
+                <div style={{ height: 6, background: "var(--surface3)", borderRadius: 3, overflow: "hidden" }}>
+                  <div style={{ height: "100%", width: `${brake}%`, background: "#ff5252", borderRadius: 3, transition: "width 0.5s" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TYRE STRATEGY */}
+          <div>
+            <div className="drawer-section-title">Tyre Strategy</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span
+                className="tyre-badge"
+                style={{ background: tyreCfg.bg, color: tyreCfg.color, border: `1px solid ${tyreCfg.color}40` }}
+              >
+                ● {tyreCfg.label}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}>Lap age: <strong style={{ color: "var(--text)" }}>{tyreAge}</strong></span>
+            </div>
+          </div>
+
+          {/* TEAM RADIO */}
+          <div>
+            <div className="drawer-section-title">
+              Team Radio
+              {radioStatus === "firestore-hit" && (
+                <span style={{ marginLeft: 8, color: "#ffa000", fontSize: 9 }}>☁ CACHED</span>
+              )}
+              {radioStatus === "api-fetched" && (
+                <span style={{ marginLeft: 8, color: "#00e676", fontSize: 9 }}>● LIVE</span>
+              )}
+            </div>
+            {radioLoading && (
+              <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>
+                Fetching radio transmissions…
+              </div>
+            )}
+            {!radioLoading && radioClips.length === 0 && (
+              <div style={{ color: "var(--muted)", fontSize: 12, padding: "12px 0" }}>
+                {radioStatus === "none" ? "No radio clips found for this session." : "Loading..."}
+              </div>
+            )}
+            {!radioLoading && radioClips.length > 0 && (
+              <div className="radio-clip-list">
+                {radioClips.slice(-6).reverse().map((clip, i) => (
+                  <div key={i} className="radio-clip">
+                    <div className="radio-clip-meta">
+                      🎙 {formatDate(clip.date)}
+                    </div>
+                    <audio controls src={clip.recording_url} preload="none" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ── NEWS PAGE ─────────────────────────────────────────────────────────────────
+
+interface NewsItem {
+  title: string;
+  description: string;
+  link: string;
+  pubDate: string;
+  enclosure?: { link: string };
+  author?: string;
+}
+
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diff = Math.floor((now - then) / 1000);
+  if (diff < 60)  return `${diff}s ago`;
+  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
+
+function readingTime(text: string): string {
+  const words = text?.split(" ").length ?? 0;
+  const mins = Math.max(1, Math.round(words / 200));
+  return `${mins} min read`;
+}
+
+const RSS_SOURCES = [
+  { key: "f1", label: "F1 Official", url: "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.formula1.com%2Fen%2Flatest%2Fall.xml&api_key=free&count=20" },
+  { key: "reddit", label: "r/formula1", url: "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.reddit.com%2Fr%2Fformula1%2F.rss&api_key=free&count=20" },
+];
+
+const NewsPage: FC = () => {
+  const [articles, setArticles]       = useState<NewsItem[]>([]);
+  const [loading,  setLoading]        = useState(true);
+  const [search,   setSearch]         = useState("");
+  const [source,   setSource]         = useState<"f1" | "reddit" | "all">("all");
+
+  useEffect(() => {
+    setLoading(true);
+    const fetches = RSS_SOURCES.map(s =>
+      fetch(s.url)
+        .then(r => r.json())
+        .then((d: any) => (d.items || []).map((item: any) => ({
+          ...item,
+          _source: s.key,
+          _sourceLabel: s.label,
+        })))
+        .catch(() => [])
+    );
+    Promise.all(fetches).then(results => {
+      const allItems = results.flat().sort(
+        (a: any, b: any) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+      );
+      setArticles(allItems as any);
+      setLoading(false);
+    });
+  }, []);
+
+  const filtered = articles.filter(a => {
+    const srcMatch = source === "all" || (a as any)._source === source;
+    const q = search.toLowerCase();
+    const textMatch = !q ||
+      a.title?.toLowerCase().includes(q) ||
+      a.description?.toLowerCase().includes(q);
+    return srcMatch && textMatch;
+  });
+
+  const tickerText = articles.slice(0, 8).map(a => a.title).join("   ·   ");
+
+  return (
+    <div className="news-page">
+      {/* Breaking ticker */}
+      <div className="news-ticker-bar">
+        <div className="news-ticker-label">⚑ BREAKING</div>
+        <div className="news-ticker-scroll">
+          <span className="news-ticker-inner">
+            {tickerText || "Loading latest F1 news…"}
+          </span>
+        </div>
+      </div>
+
+      {/* Page header */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{
+          fontFamily: "'Barlow Condensed', sans-serif",
+          fontSize: 36, fontWeight: 900, color: "var(--text)",
+          letterSpacing: 2, textTransform: "uppercase",
+        }}>
+          F1 NEWS <span style={{ color: "var(--red)" }}>FEED</span>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+          Live aggregated news from official F1 channels and the community
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="news-controls">
+        <input
+          className="news-search"
+          placeholder="Search headlines, drivers, teams…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+        {["all", "f1", "reddit"].map(s => (
+          <button
+            key={s}
+            className={`news-filter-btn${source === s ? " active" : ""}`}
+            onClick={() => setSource(s as any)}
+          >
+            {s === "all" ? "All Sources" : s === "f1" ? "F1 Official" : "Reddit"}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="news-loading">
+          <div style={{ fontSize: 28, marginBottom: 12 }}>🏎️</div>
+          Fetching latest paddock news…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="news-empty">
+          <div style={{ fontSize: 28, marginBottom: 12 }}>🔍</div>
+          No articles match your search.
+        </div>
+      ) : (
+        <div className="news-grid">
+          {filtered.map((article, i) => {
+            const imgUrl = (article as any).enclosure?.link || (article as any).thumbnail;
+            const hasImg = imgUrl && imgUrl.startsWith("http");
+            return (
+              <a
+                key={i}
+                className="news-card"
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: "none" }}
+              >
+                {hasImg ? (
+                  <img
+                    className="news-card-img"
+                    src={imgUrl}
+                    alt={article.title}
+                    onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="news-card-img-placeholder">🏁</div>
+                )}
+                <div className="news-card-body">
+                  <div className="news-card-meta">
+                    <span className="news-card-source">{(article as any)._sourceLabel}</span>
+                    <span className="news-card-time">{timeAgo(article.pubDate)}</span>
+                  </div>
+                  <div className="news-card-title">{article.title}</div>
+                  <div className="news-card-desc">
+                    {article.description?.replace(/<[^>]+>/g, "")}
+                  </div>
+                  <div className="news-card-footer">
+                    <span className="news-card-read-time">
+                      📖 {readingTime(article.description || "")}
+                    </span>
+                    <span className="news-card-link">Read More →</span>
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── RACE TRACKER PAGE ────────────────────────────────────────────────────────
+
 
 const RaceTrackerPage: FC = () => {
   const [selectedYear, setSelectedYear] = useState(2025);
@@ -2066,6 +2732,9 @@ const RaceTrackerPage: FC = () => {
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(600);
   const [section, setSection] = useState<RaceSection>("race");
+  const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
+  // sessionKey is the OpenF1 session key; for now we approximate from the race
+  const sessionKey: number | null = null; // Will be populated by the live data hook when available
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const effectiveLapData = lapData ?? [];
@@ -2258,6 +2927,10 @@ const RaceTrackerPage: FC = () => {
               totalLaps={totalLaps}
               drivers={drivers}
               onScrub={handleScrub}
+              onDriverClick={(driverCode) => {
+                const d = drivers?.find(dr => dr.id === driverCode) ?? null;
+                setDrawerDriver(d);
+              }}
             />
 
             <PositionChart
@@ -2295,6 +2968,14 @@ const RaceTrackerPage: FC = () => {
           loading={practiceLoading}
           error={practiceError}
           raceName={activeRace?.country}
+        />
+      )}
+      {/* Driver Cockpit Drawer */}
+      {drawerDriver && (
+        <DriverDrawer
+          driver={drawerDriver}
+          sessionKey={sessionKey}
+          onClose={() => setDrawerDriver(null)}
         />
       )}
     </div>
@@ -3279,6 +3960,10 @@ const F1TrackApp: FC = () => {
               onClick={() => setTab("drivers")}>DRIVERS</button>
             <button className={`nav-tab${tab === "regulations" ? " active" : ""}`}
               onClick={() => setTab("regulations")}>REGS</button>
+            <button className={`nav-tab${tab === "news" ? " active" : ""}`}
+              onClick={() => setTab("news")}>
+              📰 NEWS
+            </button>
           </div>
           <div className="nav-season">{SEASON}</div>
         </nav>
@@ -3290,6 +3975,7 @@ const F1TrackApp: FC = () => {
         {tab === "teams" && <TeamsPage />}
         {tab === "drivers" && <DriversPage />}
         {tab === "regulations" && <RegulationsPage />}
+        {tab === "news" && <NewsPage />}
       </div>
     </>
   );

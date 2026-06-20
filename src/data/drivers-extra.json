@@ -4,88 +4,243 @@
       "code": "HAM",
       "name": "Lewis Hamilton",
       "number": 44,
-      "dateOfBirth": "1985-01-07",
       "nationality": "British",
-      "team": "Mercedes",
-      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/l/lewishamilton_webbig.jpg.transform/8col-retina/image.jpg",
-      "teamWebsite": "https://www.mercedes-amgpetronas.com/en/",
-      "twitter": "https://twitter.com/LewisHamilton",
-      "instagram": "https://instagram.com/lewishamilton",
-      "careerHighlights": {
-        "worldChampionships": 7,
-        "raceWins": 103,
-        "polePositions": 104,
-        "fastestLaps": 65
-      },
-      "biography": "Lewis Carl Davidson Hamilton is a British racing driver. He is the most decorated driver in Formula One history, with seven world championships and is the first and only black driver to race in the series.",
-      "specialties": ["Wet weather", "Long runs", "Tire management"],
-      "contract": {
-        "team": "Mercedes",
-        "until": 2026,
-        "status": "Active"
-      },
-      "personalBest": {
-        "trackType": "Street circuit",
-        "favoriteCircuit": "Monaco"
-      }
-    },
-    {
-      "code": "VER",
-      "name": "Max Verstappen",
-      "number": 1,
-      "dateOfBirth": "1997-12-30",
-      "nationality": "Dutch",
-      "team": "Red Bull Racing",
-      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/m/maxverstappen_webbig.jpg.transform/8col-retina/image.jpg",
-      "teamWebsite": "https://www.redbullracing.com/",
-      "twitter": "https://twitter.com/Max33Verstappen",
-      "instagram": "https://instagram.com/maxverstappen33",
-      "careerHighlights": {
-        "worldChampionships": 2,
-        "raceWins": 51,
-        "polePositions": 29,
-        "fastestLaps": 31
-      },
-      "biography": "Max Emilian Verstappen is a Dutch racing driver and the reigning World Champion. Known for his aggressive driving style and exceptional car control, he is one of the most talented drivers of his generation.",
-      "specialties": ["High-speed corners", "Overtaking", "Racecraft"],
-      "contract": {
-        "team": "Red Bull Racing",
-        "until": 2028,
-        "status": "Active"
-      },
-      "personalBest": {
-        "trackType": "High-speed circuit",
-        "favoriteCircuit": "Monza"
-      }
+      "team": "Ferrari",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/hamilton.png",
+      "teamWebsite": "https://www.ferrari.com/en-EN/formula1",
+      "careerHighlights": { "worldChampionships": 7, "raceWins": 104, "polePositions": 104, "fastestLaps": 67 },
+      "specialties": ["Racecraft", "Wet weather", "Tire management"]
     },
     {
       "code": "RUS",
       "name": "George Russell",
       "number": 63,
-      "dateOfBirth": "1998-02-15",
       "nationality": "British",
       "team": "Mercedes",
-      "profileImage": "https://media.formula1.com/content/dam/fom-website/drivers/2024/g/georgerussell_webbig.jpg.transform/8col-retina/image.jpg",
-      "teamWebsite": "https://www.mercedes-amgpetronas.com/en/",
-      "twitter": "https://twitter.com/GeorgeRussell63",
-      "instagram": "https://instagram.com/georgerussell63",
-      "careerHighlights": {
-        "worldChampionships": 0,
-        "raceWins": 1,
-        "polePositions": 1,
-        "fastestLaps": 2
-      },
-      "biography": "George Russell is a British racing driver with Mercedes. Known for his consistency and clean driving, he is considered one of the brightest prospects in Formula One.",
-      "specialties": ["Consistency", "Qualifying", "Car development"],
-      "contract": {
-        "team": "Mercedes",
-        "until": 2025,
-        "status": "Active - Renewal discussions ongoing"
-      },
-      "personalBest": {
-        "trackType": "Modern circuit",
-        "favoriteCircuit": "La Rousse"
-      }
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/russell.png",
+      "teamWebsite": "https://www.mercedesamgf1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 2, "polePositions": 4, "fastestLaps": 6 },
+      "specialties": ["Qualifying", "Consistency", "Race pace"]
+    },
+    {
+      "code": "VER",
+      "name": "Max Verstappen",
+      "number": 1,
+      "nationality": "Dutch",
+      "team": "Red Bull Racing",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/verstappen.png",
+      "teamWebsite": "https://www.redbullracing.com",
+      "careerHighlights": { "worldChampionships": 4, "raceWins": 62, "polePositions": 40, "fastestLaps": 31 },
+      "specialties": ["High-speed corners", "Overtaking", "Racecraft"]
+    },
+    {
+      "code": "PER",
+      "name": "Sergio Perez",
+      "number": 11,
+      "nationality": "Mexican",
+      "team": "Red Bull Racing",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/perez.png",
+      "teamWebsite": "https://www.redbullracing.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 6, "polePositions": 3, "fastestLaps": 11 },
+      "specialties": ["Tire management", "Long runs", "Race starts"]
+    },
+    {
+      "code": "LEC",
+      "name": "Charles Leclerc",
+      "number": 16,
+      "nationality": "Monegasque",
+      "team": "Ferrari",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/leclerc.png",
+      "teamWebsite": "https://www.ferrari.com/en-EN/formula1",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 8, "polePositions": 24, "fastestLaps": 8 },
+      "specialties": ["Qualifying", "High-speed corners", "Race pace"]
+    },
+    {
+      "code": "SAI",
+      "name": "Carlos Sainz",
+      "number": 55,
+      "nationality": "Spanish",
+      "team": "Williams",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/sainz.png",
+      "teamWebsite": "https://www.williamsf1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 4, "polePositions": 5, "fastestLaps": 4 },
+      "specialties": ["Race pace", "Consistency", "Strategy"]
+    },
+    {
+      "code": "NOR",
+      "name": "Lando Norris",
+      "number": 4,
+      "nationality": "British",
+      "team": "McLaren",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/norris.png",
+      "teamWebsite": "https://www.mclaren.com/racing",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 4, "polePositions": 5, "fastestLaps": 9 },
+      "specialties": ["Qualifying", "Late braking", "Racecraft"]
+    },
+    {
+      "code": "PIA",
+      "name": "Oscar Piastri",
+      "number": 81,
+      "nationality": "Australian",
+      "team": "McLaren",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/piastri.png",
+      "teamWebsite": "https://www.mclaren.com/racing",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 2, "polePositions": 1, "fastestLaps": 2 },
+      "specialties": ["Race starts", "Consistency", "Long runs"]
+    },
+    {
+      "code": "ALO",
+      "name": "Fernando Alonso",
+      "number": 14,
+      "nationality": "Spanish",
+      "team": "Aston Martin",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/alonso.png",
+      "teamWebsite": "https://www.astonmartinf1.com",
+      "careerHighlights": { "worldChampionships": 2, "raceWins": 32, "polePositions": 22, "fastestLaps": 23 },
+      "specialties": ["Racecraft", "Wet weather", "Strategy"]
+    },
+    {
+      "code": "STR",
+      "name": "Lance Stroll",
+      "number": 18,
+      "nationality": "Canadian",
+      "team": "Aston Martin",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/stroll.png",
+      "teamWebsite": "https://www.astonmartinf1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 1, "fastestLaps": 0 },
+      "specialties": ["Starts", "Wet weather", "Race pace"]
+    },
+    {
+      "code": "GAS",
+      "name": "Pierre Gasly",
+      "number": 10,
+      "nationality": "French",
+      "team": "Alpine",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/gasly.png",
+      "teamWebsite": "https://www.alpinef1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 1, "polePositions": 1, "fastestLaps": 3 },
+      "specialties": ["Racecraft", "Braking", "Starts"]
+    },
+    {
+      "code": "OCO",
+      "name": "Esteban Ocon",
+      "number": 31,
+      "nationality": "French",
+      "team": "Haas",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/ocon.png",
+      "teamWebsite": "https://www.haasf1team.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 1, "polePositions": 0, "fastestLaps": 2 },
+      "specialties": ["Defense", "Race pace", "Consistency"]
+    },
+    {
+      "code": "ALB",
+      "name": "Alex Albon",
+      "number": 23,
+      "nationality": "Thai",
+      "team": "Williams",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/albon.png",
+      "teamWebsite": "https://www.williamsf1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Qualifying", "Tire management", "Race pace"]
+    },
+    {
+      "code": "TSU",
+      "name": "Yuki Tsunoda",
+      "number": 22,
+      "nationality": "Japanese",
+      "team": "Red Bull Racing",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/tsunoda.png",
+      "teamWebsite": "https://www.redbullracing.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 1 },
+      "specialties": ["Racecraft", "Aggression", "Starts"]
+    },
+    {
+      "code": "HUL",
+      "name": "Nico Hulkenberg",
+      "number": 27,
+      "nationality": "German",
+      "team": "Kick Sauber",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/hulkenberg.png",
+      "teamWebsite": "https://www.sauber-group.com/motorsport/formula-1",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 1, "fastestLaps": 2 },
+      "specialties": ["Qualifying", "Consistency", "Race pace"]
+    },
+    {
+      "code": "LAW",
+      "name": "Liam Lawson",
+      "number": 30,
+      "nationality": "New Zealander",
+      "team": "RB",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/lawson.png",
+      "teamWebsite": "https://www.visacashapprb.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Racecraft", "Adaptability", "Starts"]
+    },
+    {
+      "code": "BEA",
+      "name": "Oliver Bearman",
+      "number": 87,
+      "nationality": "British",
+      "team": "Haas",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/bearman.png",
+      "teamWebsite": "https://www.haasf1team.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Adaptability", "Race starts", "Consistency"]
+    },
+    {
+      "code": "ANT",
+      "name": "Kimi Antonelli",
+      "number": 12,
+      "nationality": "Italian",
+      "team": "Mercedes",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/antonelli.png",
+      "teamWebsite": "https://www.mercedesamgf1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Raw pace", "Qualifying", "Adaptability"]
+    },
+    {
+      "code": "HAD",
+      "name": "Isack Hadjar",
+      "number": 6,
+      "nationality": "French",
+      "team": "RB",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/hadjar.png",
+      "teamWebsite": "https://www.visacashapprb.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Race pace", "Racecraft", "Late braking"]
+    },
+    {
+      "code": "BOR",
+      "name": "Gabriel Bortoleto",
+      "number": 5,
+      "nationality": "Brazilian",
+      "team": "Kick Sauber",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/bortoleto.png",
+      "teamWebsite": "https://www.sauber-group.com/motorsport/formula-1",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Qualifying", "Overtaking", "Adaptability"]
+    },
+    {
+      "code": "COL",
+      "name": "Franco Colapinto",
+      "number": 43,
+      "nationality": "Argentine",
+      "team": "Alpine",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/colapinto.png",
+      "teamWebsite": "https://www.alpinef1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Race pace", "Aggression", "Starts"]
+    },
+    {
+      "code": "LIN",
+      "name": "Jack Doohan",
+      "number": 7,
+      "nationality": "Australian",
+      "team": "Alpine",
+      "profileImage": "https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/2024Drivers/doohan.png",
+      "teamWebsite": "https://www.alpinef1.com",
+      "careerHighlights": { "worldChampionships": 0, "raceWins": 0, "polePositions": 0, "fastestLaps": 0 },
+      "specialties": ["Qualifying", "Consistency", "Wet weather"]
     }
   ]
 }

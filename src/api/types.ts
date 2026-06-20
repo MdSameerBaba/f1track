@@ -169,6 +169,23 @@ export interface OpenF1RaceControl {
   scope?: string;             // "Track", "Sector"
 }
 
+export interface OpenF1Stint {
+  session_key: number;
+  driver_number: number;
+  stint_number: number;
+  lap_start: number;
+  lap_end: number | null;
+  compound: string;           // "SOFT", "MEDIUM", "HARD", "INTERMEDIATE", "WET"
+  tyre_age_at_start: number;
+}
+
+export interface OpenF1TeamRadio {
+  session_key: number;
+  driver_number: number;
+  date: string;
+  recording_url: string;
+}
+
 // ── Internal App Types ───────────────────────────────────────────────────────
 
 export interface Driver {
@@ -178,6 +195,7 @@ export interface Driver {
   team: string;
   color: string;
   flag: string;
+  headshot?: string;
 }
 
 export interface Race {
@@ -199,6 +217,10 @@ export interface LapSnapshot {
   order: string[];          // driver codes in position order
   safetycar: boolean;
   gaps: Record<string, number>;
+  dnf?: string[];           // driver codes that retired this lap or earlier
+  stints?: Record<string, { compound: string; lapAge: number }>;
+  sectors?: Record<string, { s1: number | null; s2: number | null; s3: number | null }>;
+  posChanges?: Record<string, number>; // delta vs lap 0 (positive = gained, negative = lost)
 }
 
 export interface Standing {

@@ -208,6 +208,7 @@ export function useLiveRaceData(
   const [isLive, setIsLive] = useState(false);
   const [dataSource, setDataSource] = useState<"openf1" | "jolpica" | "simulation">("simulation");
   const [sourceYear, setSourceYear] = useState<number | null>(null);
+  const [sessionKey, setSessionKey] = useState<number | null>(null);
 
   useEffect(() => {
     if (!countryName) return;
@@ -217,6 +218,9 @@ export function useLiveRaceData(
       setLoading(true);
       setError(null);
       setSourceYear(null);
+      // Track any valid OpenF1 session key found, even if lap data fails.
+      // This lets the cockpit panel load team radio even when Jolpica handles laps.
+      let foundSessionKey: number | null = null;
 
       // ── Attempt 1: OpenF1 (full lap-by-lap data) ──────────────────────
       try {
@@ -232,6 +236,8 @@ export function useLiveRaceData(
 
         const { session: raceSession, sourceYear: yr } = found;
         const sessionKey = raceSession.session_key;
+        // Save this regardless of whether lap data succeeds
+        foundSessionKey = sessionKey;
 
         // Sequential fetches to avoid OpenF1 rate limits
         const driverData = await openf1.getDrivers(sessionKey);
@@ -244,6 +250,10 @@ export function useLiveRaceData(
 
         const rcData = await openf1.getRaceControl(sessionKey);
         console.log("[F1TRACK] OpenF1: RaceControl:", rcData.length);
+        if (cancelled) return;
+
+        const stintsData = await openf1.getStints(sessionKey).catch(() => []);
+        console.log("[F1TRACK] OpenF1: Stints:", stintsData.length);
         if (cancelled) return;
 
         const drvs: Driver[] = driverData.map(d => ({
@@ -280,7 +290,7 @@ export function useLiveRaceData(
           }
         }
 
-        const snapshots = openf1.buildLapSnapshots(driverData, lapRecords, rcData, gridOrder);
+        const snapshots = openf1.buildLapSnapshots(driverData, lapRecords, rcData, gridOrder, stintsData);
         console.log("[F1TRACK] OpenF1: Snapshots:", snapshots.length,
           "| P1-5 first:", snapshots[0]?.order?.slice(0, 5),
           "| P1-5 last:", snapshots[snapshots.length - 1]?.order?.slice(0, 5));
@@ -291,12 +301,15 @@ export function useLiveRaceData(
           setIsLive(true);
           setDataSource("openf1");
           setSourceYear(yr);
+          setSessionKey(sessionKey);
           setLoading(false);
           return; // SUCCESS — done
         }
         throw new Error("No lap snapshots built");
       } catch (openf1Err: any) {
         console.warn("[F1TRACK] OpenF1 failed:", openf1Err.message);
+        // Even on failure, expose the found session key for team radio
+        if (foundSessionKey && !cancelled) setSessionKey(foundSessionKey);
       }
 
       if (cancelled) return;
@@ -350,6 +363,7 @@ export function useLiveRaceData(
             setIsLive(true);
             setDataSource("jolpica");
             setSourceYear(usedYear);
+            setSessionKey(null);
             setLoading(false);
             console.log("[F1TRACK] Jolpica: Loaded! P1:", laps[laps.length - 1]?.order?.[0]);
             return; // SUCCESS — done
@@ -367,6 +381,7 @@ export function useLiveRaceData(
       setIsLive(false);
       setDataSource("simulation");
       setSourceYear(null);
+      setSessionKey(null);
       setLapData(generateSimulatedLaps(58));
       setDrivers(FALLBACK_DRIVERS);
       setLoading(false);
@@ -376,7 +391,7 @@ export function useLiveRaceData(
     return () => { cancelled = true; };
   }, [season, countryName, cityHint, round]);
 
-  return { lapData, drivers, loading, error, isLive, dataSource, sourceYear };
+  return { lapData, drivers, loading, error, isLive, dataSource, sourceYear, sessionKey };
 }
 
 // ── OpenF1 Sessions List Hook ────────────────────────────────────────────────

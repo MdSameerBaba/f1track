@@ -35,6 +35,23 @@ export default defineConfig({
           });
         },
       },
+      // Proxy F1 livetiming CDN for team radio audio files.
+      // The browser cannot directly play livetiming.formula1.com audio (no CORS headers).
+      // We tunnel via /api/f1audio so the audio loads server-side then streams to the client.
+      '/api/f1audio': {
+        target: 'https://livetiming.formula1.com',
+        changeOrigin: true,
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api\/f1audio/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err, req) => {
+            console.log('[PROXY f1audio] ERROR', req.url, err.message);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log('[PROXY f1audio]', proxyRes.statusCode, req.url);
+          });
+        },
+      },
     },
   },
 });
