@@ -1413,7 +1413,7 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
         <span style={{ textAlign: "center" }}>+/−</span>
         <span style={{ textAlign: "right" }}>GAP</span>
       </div>
-      <div className="lb-list" style={{ height: currentOrder.length * ROW_H }}>
+      <div className="lb-list" style={{ height: (drivers?.length || 20) * ROW_H }}>
         {currentOrder.map((id, idx) => {
           const driver = getDriver(id);
           const prevOrder = prevOrderRef.current;
