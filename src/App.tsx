@@ -4,7 +4,7 @@
 // Falls back to static data when APIs are unavailable
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React, { useState, useEffect, useRef, useCallback, type FC } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, type FC } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
@@ -2119,160 +2119,199 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
 
 // ── CIRCUIT MAP COMPONENT ────────────────────────────────────────────────────
 
-// A realistic F1-style SVG circuit path (normalized 0-1 coordinates on 600x400 canvas)
-// Points define a complex winding circuit resembling a modern F1 track
-const CIRCUIT_PATH_POINTS: [number, number][] = [
-  [0.82, 0.50], [0.88, 0.45], [0.93, 0.38], [0.92, 0.28], [0.86, 0.22],
-  [0.78, 0.18], [0.68, 0.17], [0.58, 0.20], [0.50, 0.26], [0.43, 0.24],
-  [0.37, 0.18], [0.28, 0.16], [0.20, 0.20], [0.14, 0.28], [0.11, 0.38],
-  [0.13, 0.48], [0.18, 0.56], [0.16, 0.65], [0.20, 0.73], [0.28, 0.78],
-  [0.38, 0.80], [0.46, 0.76], [0.50, 0.68], [0.55, 0.73], [0.62, 0.80],
-  [0.70, 0.82], [0.78, 0.78], [0.84, 0.70], [0.86, 0.61], [0.82, 0.50],
-];
-
-const W = 600, H = 380;
-const TRACK_PTS = CIRCUIT_PATH_POINTS.map(([x, y]) => [x * W, y * H] as [number, number]);
-
-// Build cumulative arc-length table for path parameterization
-function buildArcTable(pts: [number, number][]): number[] {
-  const table = [0];
-  for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i][0] - pts[i - 1][0];
-    const dy = pts[i][1] - pts[i - 1][1];
-    table.push(table[i - 1] + Math.sqrt(dx * dx + dy * dy));
-  }
-  return table;
-}
-
-const ARC_TABLE = buildArcTable(TRACK_PTS);
-const TOTAL_LENGTH = ARC_TABLE[ARC_TABLE.length - 1];
-
-// Get XY position at t ∈ [0,1] along the track
-function getTrackPoint(t: number): [number, number] {
-  const target = ((t % 1) + 1) % 1 * TOTAL_LENGTH;
-  let lo = 0, hi = ARC_TABLE.length - 2;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    if (ARC_TABLE[mid + 1] < target) lo = mid + 1;
-    else hi = mid;
-  }
-  const seg = lo;
-  const segLen = ARC_TABLE[seg + 1] - ARC_TABLE[seg];
-  const alpha = segLen > 0 ? (target - ARC_TABLE[seg]) / segLen : 0;
-  const p0 = TRACK_PTS[seg];
-  const p1 = TRACK_PTS[(seg + 1) % TRACK_PTS.length];
-  return [p0[0] + alpha * (p1[0] - p0[0]), p0[1] + alpha * (p1[1] - p0[1])];
-}
-
-// Compute local curvature at t → speed multiplier (slow in corners, fast on straights)
-function getSpeedMultiplier(t: number): number {
-  const dt = 0.015;
-  const [x0, y0] = getTrackPoint(t - dt);
-  const [x1, y1] = getTrackPoint(t);
-  const [x2, y2] = getTrackPoint(t + dt);
-  const dx1 = x1 - x0, dy1 = y1 - y0;
-  const dx2 = x2 - x1, dy2 = y2 - y1;
-  const cross = Math.abs(dx1 * dy2 - dy1 * dx2);
-  const len = Math.sqrt(dx1 * dx1 + dy1 * dy1) * Math.sqrt(dx2 * dx2 + dy2 * dy2) + 0.0001;
-  const curvature = cross / (len * len);
-  // High curvature → slow (0.3x), low curvature → fast (1.0x)
-  return Math.max(0.3, 1 - curvature * 120);
-}
+// Winding, realistic coordinate paths for all major F1 Grand Prix circuits.
+// Normalized and scaled for a W=600, H=380 viewBox.
+const CIRCUIT_COORDINATES: Record<string, [number, number][]> = {
+  albert_park: [
+    [480, 100], [520, 140], [530, 200], [470, 250], [400, 290], [280, 310], [180, 300], [120, 260], [80, 190], [90, 120], [140, 90], [210, 80], [290, 100], [330, 140], [390, 140], [440, 110]
+  ],
+  shanghai: [
+    [100, 250], [130, 180], [180, 140], [250, 120], [320, 110], [380, 130], [420, 170], [450, 230], [410, 270], [340, 260], [270, 230], [200, 230], [150, 260], [110, 280], [90, 260]
+  ],
+  suzuka: [
+    [100, 280], [160, 260], [220, 250], [280, 260], [340, 280], [400, 280], [450, 240], [430, 180], [350, 160], [280, 150], [220, 140], [160, 110], [120, 70], [200, 60], [280, 80], [320, 120], [280, 180], [200, 210], [140, 240], [100, 280]
+  ],
+  bahrain: [
+    [100, 300], [420, 300], [470, 260], [430, 200], [320, 200], [350, 140], [440, 110], [400, 60], [280, 60], [200, 110], [140, 90], [90, 130], [160, 180], [90, 210], [90, 280]
+  ],
+  jeddah: [
+    [100, 150], [150, 130], [200, 120], [250, 130], [300, 140], [350, 130], [400, 120], [450, 110], [500, 120], [550, 150], [530, 180], [480, 190], [430, 180], [380, 190], [330, 200], [280, 190], [230, 180], [180, 190], [130, 180], [90, 160]
+  ],
+  monaco: [
+    [150, 290], [220, 270], [280, 270], [320, 230], [350, 170], [340, 110], [280, 90], [230, 120], [190, 110], [160, 140], [180, 160], [210, 150], [230, 170], [250, 200], [210, 210], [130, 200], [110, 230], [120, 260], [135, 280]
+  ],
+  catalunya: [
+    [100, 260], [180, 220], [250, 200], [300, 180], [360, 170], [420, 190], [460, 230], [440, 260], [370, 270], [310, 260], [240, 250], [180, 270], [120, 280], [95, 260]
+  ],
+  red_bull_ring: [
+    [100, 280], [250, 280], [380, 280], [420, 220], [320, 180], [240, 160], [160, 120], [120, 80], [180, 60], [280, 80], [350, 120], [250, 180], [150, 220], [95, 280]
+  ],
+  silverstone: [
+    [100, 240], [140, 190], [190, 150], [220, 160], [240, 130], [220, 100], [260, 80], [320, 80], [400, 130], [430, 190], [410, 250], [330, 260], [310, 300], [230, 300], [180, 280], [140, 285], [95, 270]
+  ],
+  spa: [
+    [100, 170], [120, 210], [180, 200], [230, 240], [300, 260], [360, 240], [430, 200], [460, 150], [440, 100], [390, 70], [340, 80], [300, 110], [250, 100], [200, 70], [140, 80], [110, 120], [95, 170]
+  ],
+  monza: [
+    [100, 260], [430, 260], [470, 240], [460, 170], [410, 130], [360, 140], [330, 100], [290, 90], [230, 110], [170, 100], [110, 120], [70, 170], [70, 220], [95, 260]
+  ],
+  baku: [
+    [100, 250], [450, 250], [480, 210], [450, 160], [380, 160], [350, 110], [300, 100], [250, 120], [180, 110], [130, 130], [80, 180], [95, 250]
+  ],
+  yas_marina: [
+    [100, 260], [150, 200], [200, 180], [260, 190], [320, 170], [380, 190], [440, 210], [480, 180], [460, 120], [410, 90], [350, 100], [290, 120], [230, 110], [170, 90], [120, 110], [95, 170]
+  ],
+  default: [
+    [100, 200], [200, 100], [300, 80], [400, 100], [500, 200], [450, 280], [350, 300], [250, 280], [150, 300], [100, 200]
+  ]
+};
 
 interface CircuitMapProps {
   lapData: LapSnapshot[];
   drivers: Driver[] | null;
   currentLapIndex: number;
   circuitName: string;
+  circuitId?: string;
+  playing: boolean;
+  speed: number;
   onDriverClick?: (driverCode: string) => void;
 }
 
-const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, circuitName, onDriverClick }) => {
+const CircuitMap: FC<CircuitMapProps> = ({
+  lapData,
+  drivers,
+  currentLapIndex,
+  circuitName,
+  circuitId,
+  playing,
+  speed,
+  onDriverClick
+}) => {
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
 
-  // Each driver's current track position 0→1 (always moves forward)
+  const rawPoints = CIRCUIT_COORDINATES[circuitId || ""] || CIRCUIT_COORDINATES.albert_park;
+  const W = 600, H = 380;
+
+  // Calculate arc length table for this track to interpolate coordinates smoothly
+  const arcTable = useMemo(() => {
+    const table = [0];
+    for (let i = 1; i < rawPoints.length; i++) {
+      const dx = rawPoints[i][0] - rawPoints[i - 1][0];
+      const dy = rawPoints[i][1] - rawPoints[i - 1][1];
+      table.push(table[i - 1] + Math.sqrt(dx * dx + dy * dy));
+    }
+    return table;
+  }, [rawPoints]);
+
+  const totalLength = arcTable[arcTable.length - 1];
+
+  const getTrackPointLocal = useCallback((t: number): [number, number] => {
+    const target = ((t % 1) + 1) % 1 * totalLength;
+    let lo = 0, hi = arcTable.length - 2;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (arcTable[mid + 1] < target) lo = mid + 1;
+      else hi = mid;
+    }
+    const seg = lo;
+    const segLen = arcTable[seg + 1] - arcTable[seg];
+    const alpha = segLen > 0 ? (target - arcTable[seg]) / segLen : 0;
+    const p0 = rawPoints[seg];
+    const p1 = rawPoints[(seg + 1) % rawPoints.length];
+    return [
+      p0[0] + alpha * (p1[0] - p0[0]),
+      p0[1] + alpha * (p1[1] - p0[1])
+    ];
+  }, [rawPoints, arcTable, totalLength]);
+
+  const getSpeedMultiplierLocal = useCallback((t: number): number => {
+    const dt = 0.015;
+    const [x0, y0] = getTrackPointLocal(t - dt);
+    const [x1, y1] = getTrackPointLocal(t);
+    const [x2, y2] = getTrackPointLocal(t + dt);
+    const dx1 = x1 - x0, dy1 = y1 - y0;
+    const dx2 = x2 - x1, dy2 = y2 - y1;
+    const cross = Math.abs(dx1 * dy2 - dy1 * dx2);
+    const len = Math.sqrt(dx1 * dx1 + dy1 * dy1) * Math.sqrt(dx2 * dx2 + dy2 * dy2) + 0.0001;
+    const curvature = cross / (len * len);
+    return Math.max(0.3, 1 - curvature * 120);
+  }, [getTrackPointLocal]);
+
+  // Keep track of the active driver positions and continuous progress
   const positionsRef = useRef<Record<string, number>>({});
-  const animFrameRef = useRef<number>(0);
-  const lastTimeRef  = useRef<number>(0);
-  // Target positions computed from lap data (leader at front, others behind)
-  const targetPosRef = useRef<Record<string, number>>({});
+  const phaseRef = useRef<number>(0);
+  const lastTimeRef = useRef<number>(performance.now());
   const [, forceRender] = useState(0);
 
   const snap = lapData[Math.min(currentLapIndex, lapData.length - 1)];
 
-  // Recompute target positions when lap changes
+  // Synchronise coordinates reset on lap change to keep start/finish line aligned
   useEffect(() => {
-    if (!snap) return;
-    const n = snap.order.length;
-    // Leader is at position 0.98 (just before S/F line), rest spread back in order
-    // Spacing: roughly 1/n of the track between each driver
-    const spacing = 0.82 / n;
-    snap.order.forEach((code, rankIdx) => {
-      // rankIdx 0 = leader (furthest ahead), higher = further back
-      const target = ((0.98 - rankIdx * spacing) + 1) % 1;
-      targetPosRef.current[code] = target;
-      // Init on first load
-      if (positionsRef.current[code] === undefined) {
-        positionsRef.current[code] = target;
-      }
-    });
-  }, [snap?.lap, currentLapIndex]);
+    phaseRef.current = 0.0;
+  }, [currentLapIndex]);
 
-  // Animation loop — lerp toward target, ALWAYS forward
+  // Animation Loop: Updates elapsed time continuously and calculates next positions
   useEffect(() => {
-    if (!snap) return;
+    let animFrame: number;
 
     function animate(now: number) {
-      const dt = Math.min((now - (lastTimeRef.current || now)) / 1000, 0.05);
+      const dtMs = now - lastTimeRef.current;
       lastTimeRef.current = now;
 
-      let dirty = false;
-      snap.order.forEach((code) => {
-        const cur = positionsRef.current[code] ?? 0;
-        const tgt = targetPosRef.current[code] ?? cur;
+      if (playing && snap) {
+        // Increment global leader phase: completes 1.0 lap in 'speed' milliseconds
+        phaseRef.current = (phaseRef.current + dtMs / speed) % 1.0;
 
-        // Always approach target going FORWARD (increasing t, wrapping at 1→0)
-        let diff = tgt - cur;
-        // If negative, it means we need to go forward past the finish line
-        if (diff < -0.3) diff += 1;
-        // Only ever move forward (positive diff)
-        if (diff < 0) diff = 0;
+        const leaderProgress = phaseRef.current;
 
-        const curveFactor = getSpeedMultiplier(cur);
-        const step = Math.min(diff, dt * curveFactor * 1.2);
-        const next = (cur + step) % 1;
-        if (Math.abs(next - cur) > 0.00001) {
-          positionsRef.current[code] = next;
-          dirty = true;
-        }
-      });
+        snap.order.forEach((code, idx) => {
+          // Gap in seconds from leader
+          const gap = snap.gaps?.[code] ?? (idx * 1.5);
+          // Scale gap into track percentage: e.g. 1s gap = 1.2% of track length
+          const gapPercentage = gap * 0.012;
+          // Target position is gapPercentage behind the leader
+          const target = (leaderProgress - gapPercentage + 1.0) % 1.0;
 
-      if (dirty) forceRender(t => t + 1);
-      animFrameRef.current = requestAnimationFrame(animate);
+          // Smoothly transition actual dot position to target
+          const cur = positionsRef.current[code] ?? target;
+          let diff = target - cur;
+          if (diff < -0.5) diff += 1;
+          if (diff > 0.5) diff -= 1;
+
+          // Apply physics speed scaling based on track curvature
+          const curveSpeed = getSpeedMultiplierLocal(cur);
+          const step = diff * Math.min((dtMs / 1000) * 8.0 * curveSpeed, 1.0);
+          positionsRef.current[code] = (cur + step + 1.0) % 1.0;
+        });
+
+        forceRender(v => v + 1);
+      }
+
+      animFrame = requestAnimationFrame(animate);
     }
 
-    animFrameRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [snap]);
+    lastTimeRef.current = performance.now();
+    animFrame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animFrame);
+  }, [playing, speed, snap, getSpeedMultiplierLocal]);
 
   if (!snap) {
     return <div style={{ padding: 20, color: "var(--muted)" }}>Loading circuit data…</div>;
   }
 
+  // Generate SVG path string from the active circuit coordinates
+  const pathD = rawPoints.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ") + " Z";
 
-  // SVG path string from points
-  const pathD = TRACK_PTS.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ") + " Z";
-
-  // Sector colouring — split path into 3 roughly equal sectors
-  const s1pts = TRACK_PTS.slice(0, 10);
-  const s2pts = TRACK_PTS.slice(9, 20);
-  const s3pts = TRACK_PTS.slice(19);
+  // Split path into 3 sectors
+  const sLen = Math.floor(rawPoints.length / 3);
+  const s1pts = rawPoints.slice(0, sLen + 1);
+  const s2pts = rawPoints.slice(sLen, sLen * 2 + 1);
+  const s3pts = rawPoints.slice(sLen * 2);
   const sectorPath = (pts: [number, number][]) =>
     pts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
 
   return (
     <div style={{
-      marginTop: 32,
       background: "rgba(0,0,0,0.35)",
       border: "1px solid rgba(255,255,255,0.08)",
       borderRadius: 10,
@@ -2321,8 +2360,8 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
 
           {/* Start/Finish line */}
           {(() => {
-            const [sx, sy] = TRACK_PTS[0];
-            const [nx, ny] = TRACK_PTS[1];
+            const [sx, sy] = rawPoints[0];
+            const [nx, ny] = rawPoints[1];
             const ang = Math.atan2(ny - sy, nx - sx) + Math.PI / 2;
             return (
               <line
@@ -2332,7 +2371,7 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
               />
             );
           })()}
-          <text x={TRACK_PTS[0][0] + 8} y={TRACK_PTS[0][1] - 10}
+          <text x={rawPoints[0][0] + 8} y={rawPoints[0][1] - 10}
             fill="#00e676" fontSize="10" fontWeight="800"
             fontFamily="'Barlow Condensed', sans-serif" letterSpacing="1">
             S/F
@@ -2342,10 +2381,10 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
           {snap.order.map((code, rankIdx) => {
             const driver = drivers?.find(d => d.id === code);
             const t = positionsRef.current[code] ?? (rankIdx / snap.order.length);
-            const [x, y] = getTrackPoint(t);
+            const [x, y] = getTrackPointLocal(t);
             const isHovered = hoveredDriver === code;
-            const isDNF = false;
-            const pos = rankIdx + 1; // P1 leader at top
+            const isDNF = snap.dnf?.includes(code) ?? false;
+            const pos = rankIdx + 1;
 
             return (
               <g
@@ -2443,6 +2482,7 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
     </div>
   );
 };
+
 
 
 
@@ -3116,6 +3156,9 @@ const RaceTrackerPage: FC = () => {
                   drivers={drivers}
                   currentLapIndex={lapIndex}
                   circuitName={activeRace.circuit}
+                  circuitId={activeRace.circuitId}
+                  playing={playing}
+                  speed={speed}
                   onDriverClick={(driverCode) => {
                     const d = drivers?.find(dr => dr.id === driverCode) ?? null;
                     setDrawerDriver(d);
