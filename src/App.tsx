@@ -1846,7 +1846,7 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
       </div>
 
       <div style={{ width: "100%", flex: 1, minHeight: "360px", position: "relative" }}>
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height={360}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
             <XAxis
