@@ -2190,62 +2190,75 @@ interface CircuitMapProps {
 const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, circuitName, onDriverClick }) => {
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
 
-  // Track positions of each driver as a continuous 0-1 float (persisted across renders)
+  // Each driver's current track position 0→1 (always moves forward)
   const positionsRef = useRef<Record<string, number>>({});
   const animFrameRef = useRef<number>(0);
   const lastTimeRef  = useRef<number>(0);
-  const [renderTick, setRenderTick] = useState(0);
+  // Target positions computed from lap data (leader at front, others behind)
+  const targetPosRef = useRef<Record<string, number>>({});
+  const [, forceRender] = useState(0);
 
-  const currentSnap = lapData[Math.min(currentLapIndex, lapData.length - 1)];
-  const nextSnap    = lapData[Math.min(currentLapIndex + 1, lapData.length - 1)];
+  const snap = lapData[Math.min(currentLapIndex, lapData.length - 1)];
 
-  // Initialise positions when data first loads
+  // Recompute target positions when lap changes
   useEffect(() => {
-    if (!currentSnap) return;
-    const total = currentSnap.order.length;
-    currentSnap.order.forEach((code, i) => {
+    if (!snap) return;
+    const n = snap.order.length;
+    // Leader is at position 0.98 (just before S/F line), rest spread back in order
+    // Spacing: roughly 1/n of the track between each driver
+    const spacing = 0.82 / n;
+    snap.order.forEach((code, rankIdx) => {
+      // rankIdx 0 = leader (furthest ahead), higher = further back
+      const target = ((0.98 - rankIdx * spacing) + 1) % 1;
+      targetPosRef.current[code] = target;
+      // Init on first load
       if (positionsRef.current[code] === undefined) {
-        positionsRef.current[code] = i / total;
+        positionsRef.current[code] = target;
       }
     });
-  }, [currentSnap]);
+  }, [snap?.lap, currentLapIndex]);
 
-  // Smooth animation loop — move dots toward their target lap-fraction position
+  // Animation loop — lerp toward target, ALWAYS forward
   useEffect(() => {
-    if (!currentSnap) return;
-
-    const total = currentSnap.order.length;
+    if (!snap) return;
 
     function animate(now: number) {
-      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
+      const dt = Math.min((now - (lastTimeRef.current || now)) / 1000, 0.05);
       lastTimeRef.current = now;
 
-      let changed = false;
-      currentSnap.order.forEach((code, rankIdx) => {
-        // Target: evenly space by rank, but with lap-advancement built in
-        const target = ((rankIdx / total) + currentLapIndex * 0.35) % 1;
-        const cur = positionsRef.current[code] ?? target;
-        // Wrap-around aware lerp
-        let delta = target - cur;
-        if (delta > 0.5) delta -= 1;
-        if (delta < -0.5) delta += 1;
-        const speed = getSpeedMultiplier(cur) * 0.8;
-        const next = cur + delta * Math.min(dt * speed * 2, 1);
-        positionsRef.current[code] = ((next % 1) + 1) % 1;
-        changed = true;
+      let dirty = false;
+      snap.order.forEach((code) => {
+        const cur = positionsRef.current[code] ?? 0;
+        const tgt = targetPosRef.current[code] ?? cur;
+
+        // Always approach target going FORWARD (increasing t, wrapping at 1→0)
+        let diff = tgt - cur;
+        // If negative, it means we need to go forward past the finish line
+        if (diff < -0.3) diff += 1;
+        // Only ever move forward (positive diff)
+        if (diff < 0) diff = 0;
+
+        const curveFactor = getSpeedMultiplier(cur);
+        const step = Math.min(diff, dt * curveFactor * 1.2);
+        const next = (cur + step) % 1;
+        if (Math.abs(next - cur) > 0.00001) {
+          positionsRef.current[code] = next;
+          dirty = true;
+        }
       });
 
-      if (changed) setRenderTick(t => t + 1);
+      if (dirty) forceRender(t => t + 1);
       animFrameRef.current = requestAnimationFrame(animate);
     }
 
     animFrameRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animFrameRef.current);
-  }, [currentSnap, currentLapIndex]);
+  }, [snap]);
 
-  if (!currentSnap) {
+  if (!snap) {
     return <div style={{ padding: 20, color: "var(--muted)" }}>Loading circuit data…</div>;
   }
+
 
   // SVG path string from points
   const pathD = TRACK_PTS.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ") + " Z";
@@ -2279,9 +2292,9 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
           🏎 {circuitName}
         </div>
         <div style={{ marginLeft: "auto", fontSize: 10, color: "var(--muted)", fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: 1.5 }}>
-          LAP {currentSnap.lap} · {currentSnap.order.length} CARS
+          LAP {snap.lap} · {snap.order.length} CARS
         </div>
-        {currentSnap.safetycar && (
+        {snap.safetycar && (
           <div style={{
             background: "rgba(255,214,0,0.15)", border: "1px solid rgba(255,214,0,0.4)",
             color: "#ffd700", padding: "3px 10px", borderRadius: 3,
@@ -2326,13 +2339,13 @@ const CircuitMap: FC<CircuitMapProps> = ({ lapData, drivers, currentLapIndex, ci
           </text>
 
           {/* Driver dots */}
-          {currentSnap.order.map((code, rankIdx) => {
+          {snap.order.map((code, rankIdx) => {
             const driver = drivers?.find(d => d.id === code);
-            const t = positionsRef.current[code] ?? (rankIdx / currentSnap.order.length);
+            const t = positionsRef.current[code] ?? (rankIdx / snap.order.length);
             const [x, y] = getTrackPoint(t);
             const isHovered = hoveredDriver === code;
-            const isDNF = false; // Could be extended with DNF logic from lap data
-            const pos = rankIdx + 1;
+            const isDNF = false;
+            const pos = rankIdx + 1; // P1 leader at top
 
             return (
               <g
@@ -2488,22 +2501,32 @@ const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) =>
         return;
       }
 
-      // 2. Fall back to OpenF1 API
-      console.log(`[Radio] Firestore MISS — fetching from OpenF1...`);
+      // 2. Fall back to OpenF1 API — use the /api/openf1 proxy to avoid CORS
+      console.log(`[Radio] Firestore MISS — fetching from OpenF1 via proxy...`);
       try {
-        const url = `https://api.openf1.org/v1/team_radio?session_key=${sessionKey}&driver_number=${driverNumber}`;
+        // Use the Vite dev proxy: /api/openf1 → https://api.openf1.org/v1
+        const url = `/api/openf1/team_radio?session_key=${sessionKey}&driver_number=${driverNumber}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const clips = (data as any[]).map((c: any) => ({
-          date: c.date,
-          recording_url: c.recording_url,
-        }));
+        const clips = (data as any[]).map((c: any) => {
+          // recording_url comes from livetiming.formula1.com — rewrite via /api/f1audio proxy
+          let audioUrl = c.recording_url ?? "";
+          if (audioUrl.includes("livetiming.formula1.com")) {
+            // e.g. https://livetiming.formula1.com/static/2024/2024-03-02_Bahrain/...
+            // → /api/f1audio/static/2024/...
+            audioUrl = audioUrl.replace("https://livetiming.formula1.com", "/api/f1audio");
+          }
+          return {
+            date: c.date,
+            recording_url: audioUrl,
+          };
+        });
         console.log(`[Radio] OpenF1 returned ${clips.length} clips`);
         setRadioClips(clips);
         setRadioStatus(clips.length > 0 ? "api-fetched" : "none");
 
-        // 3. Cache to Firestore
+        // 3. Cache to Firestore (store original URLs so they're rewritten on next load too)
         if (clips.length > 0) {
           console.log("[Radio] Saving to Firestore...");
           await saveRadioToFirestore(sessionKey, driverNumber, clips);
@@ -3061,43 +3084,62 @@ const RaceTrackerPage: FC = () => {
               </div>
             </div>
 
-            <Leaderboard
-              lapData={effectiveLapData}
-              lapIndex={lapIndex}
-              totalLaps={totalLaps}
-              drivers={drivers}
-              onScrub={handleScrub}
-              onDriverClick={(driverCode) => {
-                const d = drivers?.find(dr => dr.id === driverCode) ?? null;
-                setDrawerDriver(d);
-              }}
-            />
+            {/* ── 3-COLUMN BROADCAST LAYOUT ─────────────────────────────── */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "320px 1fr 300px",
+              gridTemplateRows: "auto",
+              gap: 14,
+              marginTop: 16,
+              alignItems: "start",
+            }}>
+              {/* LEFT — Position Chart + Live Feed stacked */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <PositionChart
+                  lapData={effectiveLapData}
+                  drivers={drivers}
+                  currentLapIndex={lapIndex}
+                />
+                <LiveFeedPanel
+                  lapData={effectiveLapData}
+                  drivers={drivers}
+                  currentLapIndex={lapIndex}
+                  totalLaps={totalLaps}
+                  raceIsLive={raceIsLive}
+                />
+              </div>
 
-            <PositionChart
-              lapData={effectiveLapData}
-              drivers={drivers}
-              currentLapIndex={lapIndex}
-            />
+              {/* CENTER — Circuit Map hero */}
+              <div>
+                <CircuitMap
+                  lapData={effectiveLapData}
+                  drivers={drivers}
+                  currentLapIndex={lapIndex}
+                  circuitName={activeRace.circuit}
+                  onDriverClick={(driverCode) => {
+                    const d = drivers?.find(dr => dr.id === driverCode) ?? null;
+                    setDrawerDriver(d);
+                  }}
+                />
+              </div>
 
-            <CircuitMap
-              lapData={effectiveLapData}
-              drivers={drivers}
-              currentLapIndex={lapIndex}
-              circuitName={activeRace.circuit}
-              onDriverClick={(driverCode) => {
-                const d = drivers?.find(dr => dr.id === driverCode) ?? null;
-                setDrawerDriver(d);
-              }}
-            />
-
-            <LiveFeedPanel
-              lapData={effectiveLapData}
-              drivers={drivers}
-              currentLapIndex={lapIndex}
-              totalLaps={totalLaps}
-              raceIsLive={raceIsLive}
-            />
+              {/* RIGHT — Leaderboard */}
+              <div style={{ position: "sticky", top: 80 }}>
+                <Leaderboard
+                  lapData={effectiveLapData}
+                  lapIndex={lapIndex}
+                  totalLaps={totalLaps}
+                  drivers={drivers}
+                  onScrub={handleScrub}
+                  onDriverClick={(driverCode) => {
+                    const d = drivers?.find(dr => dr.id === driverCode) ?? null;
+                    setDrawerDriver(d);
+                  }}
+                />
+              </div>
+            </div>
           </>
+
         )
       ) : section === "sat" ? (
         <QualifyingResults
