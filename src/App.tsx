@@ -9,7 +9,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import type { Race, Driver, LapSnapshot, Highlight } from "./api/types";
-import { useSchedule, useStandings, useLiveRaceData, useQualifyingData, usePracticeData } from "./hooks/useF1Data";
+import { useSchedule, useStandings, useLiveRaceData, useQualifyingData, usePracticeData, useWeatherData } from "./hooks/useF1Data";
 import type { QualifyingEntry, PracticeSession, PracticeEntry } from "./hooks/useF1Data";
 import { FALLBACK_HIGHLIGHTS } from "./hooks/fallbackData";
 import { getCircuitInfo, type CircuitInfo } from "./data/circuits";
@@ -36,6 +36,70 @@ const SPEED_OPTIONS: SpeedOption[] = [
 ];
 
 const AVAILABLE_YEARS = [2024, 2025, 2026] as const;
+
+interface WeatherHUDProps {
+  sessionKey: number | null;
+}
+
+const WeatherHUD: FC<WeatherHUDProps> = ({ sessionKey }) => {
+  const { weather, loading } = useWeatherData(sessionKey);
+
+  if (loading || !weather) {
+    return (
+      <div style={{
+        padding: "8px 14px",
+        background: "rgba(0,0,0,0.3)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 6,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--muted)",
+        fontSize: 11,
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }}>
+        WEATHER DATA LOADING…
+      </div>
+    );
+  }
+
+  const getIcon = () => {
+    if (weather.rainfall) return "🌧️";
+    if (weather.humidity > 70) return "☁️";
+    if (weather.airTemp > 28) return "☀️";
+    return "⛅";
+  };
+
+  return (
+    <div style={{
+      padding: "8px 14px",
+      background: "rgba(0,0,0,0.3)",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 6,
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      fontFamily: "'Barlow Condensed', sans-serif",
+      color: "var(--muted)",
+      fontSize: 11,
+      letterSpacing: 0.5,
+    }}>
+      <div style={{ fontSize: 18, lineHeight: 1 }}>{getIcon()}</div>
+      <div style={{ display: "flex", gap: 10 }}>
+        <div>Air <strong style={{ color: "#fff" }}>{weather.airTemp.toFixed(1)}°C</strong></div>
+        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
+          Track <strong style={{ color: "#fff" }}>{weather.trackTemp.toFixed(1)}°C</strong>
+        </div>
+        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
+          Humidity <strong style={{ color: "#fff" }}>{weather.humidity.toFixed(0)}%</strong>
+        </div>
+        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
+          Wind <strong style={{ color: "#fff" }}>{weather.windSpeed.toFixed(1)} m/s</strong>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -1417,14 +1481,26 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
           const delta = prevIdx - idx;
           const flash = flashMap[id];
           const pos = idx + 1;
+          
+          const isRetired = currentSnap?.dnf?.includes(id) ?? false;
           const gapVal = gapTimes.current[id] ?? 0;
+          const prevDriverId = idx > 0 ? currentOrder[idx - 1] : null;
+          const prevGapVal = prevDriverId ? (gapTimes.current[prevDriverId] ?? 0) : 0;
+          const gapToAhead = idx > 0 ? gapVal - prevGapVal : 0;
+          const hasDrs = idx > 0 && gapToAhead <= 1.0 && !isRetired;
+
           const gap = idx === 0 ? "INTERVAL" : `+${gapVal.toFixed(3)}s`;
 
           return (
             <div
               key={id}
               className={`lb-row${flash === "up" ? " gained" : flash === "down" ? " lost" : ""}`}
-              style={{ top: idx * ROW_H, cursor: onDriverClick ? "pointer" : "default" }}
+              style={{ 
+                top: idx * ROW_H, 
+                cursor: onDriverClick ? "pointer" : "default",
+                opacity: isRetired ? 0.55 : 1,
+                transition: "opacity 0.25s ease",
+              }}
               onClick={() => onDriverClick?.(id)}
               title={onDriverClick ? `Click to view ${driver.name} telemetry` : undefined}
             >
@@ -1434,7 +1510,15 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
               <div className="driver-cell">
                 <div className="team-bar" style={{ backgroundColor: driver.color, color: driver.color }} />
                 <div>
-                  <div className="driver-abbr">{driver.flag} {driver.id}</div>
+                  <div className="driver-abbr">
+                    {driver.flag} {driver.id}
+                    {isRetired && (
+                      <span style={{ backgroundColor: "#e10600", color: "#fff", fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, marginLeft: 8, verticalAlign: "middle" }}>DNF</span>
+                    )}
+                    {hasDrs && (
+                      <span style={{ backgroundColor: "#00e676", color: "#000", fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 3, marginLeft: 8, verticalAlign: "middle" }}>DRS</span>
+                    )}
+                  </div>
                   <div className="driver-name-full">{driver.name}</div>
                   <div className="driver-team-name">{driver.team}</div>
                 </div>
@@ -1442,7 +1526,9 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
               <div className={`pos-change ${delta > 0 ? "up" : delta < 0 ? "down" : "same"}`}>
                 {delta > 0 ? `▲ ${delta}` : delta < 0 ? `▼ ${Math.abs(delta)}` : "—"}
               </div>
-              <div className={`gap-cell${idx === 0 ? " leader" : ""}`}>{gap}</div>
+              <div className={`gap-cell${idx === 0 ? " leader" : ""}`} style={{ color: isRetired ? "var(--red)" : undefined }}>
+                {isRetired ? "DNF" : gap}
+              </div>
             </div>
           );
         })}
@@ -2156,7 +2242,21 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
 // Normalized and scaled for a W=600, H=380 viewBox.
 const CIRCUIT_COORDINATES: Record<string, [number, number][]> = {
   albert_park: [
-    [480, 100], [520, 140], [530, 200], [470, 250], [400, 290], [280, 310], [180, 300], [120, 260], [80, 190], [90, 120], [140, 90], [210, 80], [290, 100], [330, 140], [390, 140], [440, 110]
+    [320, 290], [250, 290], [180, 290], [120, 290],
+    [95, 290], [80, 280], [75, 265], [85, 250], [105, 245],
+    [120, 230], [140, 210], [160, 185], [175, 155],
+    [180, 125], [170, 105], [150, 95], [130, 100], [115, 115],
+    [100, 140], [85, 160], [70, 150], [60, 130],
+    [65, 100], [75, 80], [95, 65],
+    [120, 55], [150, 50], [185, 55], [220, 65],
+    [260, 80], [300, 95], [340, 100], [380, 100],
+    [415, 100], [440, 95], [460, 105], [470, 120],
+    [465, 135], [450, 145], [425, 150], [395, 150],
+    [360, 150], [320, 155], [280, 165], [240, 180],
+    [210, 200], [195, 220], [200, 240], [215, 250], [235, 245],
+    [255, 230], [275, 215], [300, 205],
+    [330, 205], [360, 210], [380, 220], [390, 235], [385, 255],
+    [370, 275], [350, 285], [330, 290]
   ],
   shanghai: [
     [100, 250], [130, 180], [180, 140], [250, 120], [320, 110], [380, 130], [420, 170], [450, 230], [410, 270], [340, 260], [270, 230], [200, 230], [150, 260], [110, 280], [90, 260]
@@ -2425,13 +2525,14 @@ const CircuitMap: FC<CircuitMapProps> = ({
           </text>
 
           {/* Driver dots */}
-          {snap.order.map((code, rankIdx) => {
-            const driver = drivers?.find(d => d.id === code);
-            const t = positionsRef.current[code] ?? (rankIdx / snap.order.length);
-            const [x, y] = getTrackPointLocal(t);
-            const isHovered = hoveredDriver === code;
-            const isDNF = snap.dnf?.includes(code) ?? false;
-            const pos = rankIdx + 1;
+          {snap.order
+            .filter(code => !(snap.dnf?.includes(code)))
+            .map((code, rankIdx) => {
+              const driver = drivers?.find(d => d.id === code);
+              const t = positionsRef.current[code] ?? (rankIdx / snap.order.length);
+              const [x, y] = getTrackPointLocal(t);
+              const isHovered = hoveredDriver === code;
+              const pos = snap.order.indexOf(code) + 1;
 
             return (
               <g
@@ -2452,9 +2553,9 @@ const CircuitMap: FC<CircuitMapProps> = ({
                 {/* Driver dot */}
                 <circle
                   cx={x} cy={y}
-                  r={isDNF ? 5 : isHovered ? 9 : 7}
-                  fill={isDNF ? "#ff5252" : (driver?.color || "#888")}
-                  opacity={isDNF ? 0.5 : 1}
+                  r={isHovered ? 9 : 7}
+                  fill={driver?.color || "#888"}
+                  opacity={1}
                   style={{
                     filter: isHovered ? `drop-shadow(0 0 8px ${driver?.color || "#fff"})` : undefined,
                     transition: "r 0.15s ease",
@@ -3060,6 +3161,7 @@ const RaceTrackerPage: FC = () => {
     isLive: raceIsLive,
     dataSource: raceDataSource,
     sourceYear,
+    sessionKey,
   } = useLiveRaceData(selectedYear, activeRace?.countryCode ?? "", activeRace?.city, activeRace?.round);
   const showingPriorYear = raceIsLive && sourceYear !== null && sourceYear !== selectedYear;
 
@@ -3068,22 +3170,21 @@ const RaceTrackerPage: FC = () => {
     qualifying: qualifyingData,
     loading: qualiLoading,
     error: qualiError,
-  } = useQualifyingData(selectedYear, activeRace?.round ?? 0, activeRace?.country);
+  } = useQualifyingData(sourceYear ?? selectedYear, activeRace?.round ?? 0, activeRace?.country);
 
   // Practice data
   const {
     sessions: practiceSessions,
     loading: practiceLoading,
     error: practiceError,
-  } = usePracticeData(selectedYear, activeRace?.countryCode ?? "");
+  } = usePracticeData(sourceYear ?? selectedYear, activeRace?.countryCode ?? "");
 
   const [lapIndex, setLapIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(2500);
   const [section, setSection] = useState<RaceSection>("race");
   const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
-  // sessionKey is the OpenF1 session key; for now we approximate from the race
-  const sessionKey: number | null = null; // Will be populated by the live data hook when available
+  
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const effectiveLapData = lapData ?? [];
@@ -3235,7 +3336,7 @@ const RaceTrackerPage: FC = () => {
                   }}
                 />
               )}
-              <div className="race-header-content">
+              <div className="race-header-content" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
                 <div className="race-header-info">
                   <div className="race-header-name">
                     {activeRace.country} {activeRace.name}
@@ -3252,20 +3353,23 @@ const RaceTrackerPage: FC = () => {
                     )}
                   </div>
                 </div>
-                <div className="controls">
-                  <div className="lap-info">
-                    LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
+                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                  <WeatherHUD sessionKey={sessionKey} />
+                  <div className="controls" style={{ margin: 0 }}>
+                    <div className="lap-info">
+                      LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
+                    </div>
+                    <button className="btn secondary" onClick={reset}>↺ RESET</button>
+                    <button className="btn" onClick={togglePlay}>
+                      {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
+                    </button>
+                    <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
+                      className="speed-select">
+                      {SPEED_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
                   </div>
-                  <button className="btn secondary" onClick={reset}>↺ RESET</button>
-                  <button className="btn" onClick={togglePlay}>
-                    {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
-                  </button>
-                  <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
-                    className="speed-select">
-                    {SPEED_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
                 </div>
               </div>
             </div>

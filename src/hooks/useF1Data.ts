@@ -768,3 +768,74 @@ function generateSimulatedLaps(totalLaps: number): LapSnapshot[] {
 }
 
 export { generateSimulatedLaps };
+
+export function useWeatherData(sessionKey: number | null) {
+  const [weather, setWeather] = useState<{
+    airTemp: number;
+    trackTemp: number;
+    humidity: number;
+    windSpeed: number;
+    rainfall: boolean;
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!sessionKey) {
+      setWeather({
+        airTemp: 27.9,
+        trackTemp: 34.5,
+        humidity: 45,
+        windSpeed: 2.9,
+        rainfall: false,
+      });
+      return;
+    }
+
+    let cancelled = false;
+    async function fetchWeather() {
+      setLoading(true);
+      try {
+        const url = `/api/openf1/weather?session_key=${sessionKey}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Weather fetch failed");
+        const data = await res.json() as any[];
+        if (data.length > 0 && !cancelled) {
+          const latest = data[data.length - 1];
+          setWeather({
+            airTemp: latest.air_temperature ?? 27.9,
+            trackTemp: latest.track_temperature ?? 34.5,
+            humidity: latest.humidity ?? 45,
+            windSpeed: latest.wind_speed ?? 2.9,
+            rainfall: latest.rainfall === 1 || latest.rainfall === true || String(latest.rainfall) === "1",
+          });
+        } else if (!cancelled) {
+          setWeather({
+            airTemp: 27.9,
+            trackTemp: 34.5,
+            humidity: 45,
+            windSpeed: 2.9,
+            rainfall: false,
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to fetch OpenF1 weather, using fallback:", err);
+        if (!cancelled) {
+          setWeather({
+            airTemp: 27.9,
+            trackTemp: 34.5,
+            humidity: 45,
+            windSpeed: 2.9,
+            rainfall: false,
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchWeather();
+    return () => { cancelled = true; };
+  }, [sessionKey]);
+
+  return { weather, loading };
+}
