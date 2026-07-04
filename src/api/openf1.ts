@@ -178,7 +178,13 @@ export async function getSessions(
   countryName?: string
 ): Promise<OpenF1Session[]> {
   let url = `${BASE}/sessions?year=${year}`;
-  if (countryName) url += `&country_name=${encodeURIComponent(countryName)}`;
+  if (countryName) {
+    // Keep only letters, spaces, and hyphens (stripping emojis/flags/special characters)
+    const cleaned = countryName.replace(/[^\w\s-]/gi, "").trim();
+    if (cleaned) {
+      url += `&country_name=${encodeURIComponent(cleaned)}`;
+    }
+  }
   
   const sessions = await fetchJSON<OpenF1Session[]>(url);
   
@@ -339,8 +345,6 @@ function getCountryVariants(country: string): string[] {
   return [country, ...(COUNTRY_ALIASES[country] ?? [])];
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 /**
  * Find the Race session for a specific meeting (race weekend).
  * Tries the requested year first, then falls back to prior years
@@ -356,14 +360,16 @@ export async function getRaceSession(
   const years = [season, season - 1, 2024, 2023];
   const uniqueYears = Array.from(new Set(years));
 
-  const countryNameLower = countryName.toLowerCase();
+  // Clean country name of flags/emojis
+  const cleanedCountry = countryName.replace(/[^\w\s-]/gi, "").trim();
+  const variants = getCountryVariants(cleanedCountry).map(v => v.toLowerCase());
   const hint = cityHint?.toLowerCase();
 
   for (const y of uniqueYears) {
     const sessions = await getSessions(y).catch(() => [] as OpenF1Session[]);
     const raceSessions = sessions.filter(s =>
       s.session_name?.toLowerCase() === "race" &&
-      s.country_name?.toLowerCase() === countryNameLower
+      s.country_name && variants.includes(s.country_name.toLowerCase())
     );
 
     if (raceSessions.length > 0) {
