@@ -3556,7 +3556,7 @@ const RaceTrackerPage: FC = () => {
               alignItems: "stretch",
             }}>
               {/* LEFT TOP — Race Live Feed */}
-              <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
+              <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2", height: 460 }}>
                 <LiveFeedPanel
                   lapData={effectiveLapData}
                   drivers={drivers}
@@ -3567,7 +3567,7 @@ const RaceTrackerPage: FC = () => {
               </div>
 
               {/* CENTER TOP — Circuit Map hero */}
-              <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2" }}>
+              <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2", height: 460 }}>
                 <CircuitMap
                   lapData={effectiveLapData}
                   drivers={drivers}
