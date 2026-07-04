@@ -37,69 +37,7 @@ const SPEED_OPTIONS: SpeedOption[] = [
 
 const AVAILABLE_YEARS = [2024, 2025, 2026] as const;
 
-interface WeatherHUDProps {
-  sessionKey: number | null;
-}
 
-const WeatherHUD: FC<WeatherHUDProps> = ({ sessionKey }) => {
-  const { weather, loading } = useWeatherData(sessionKey);
-
-  if (loading || !weather) {
-    return (
-      <div style={{
-        padding: "8px 14px",
-        background: "rgba(0,0,0,0.3)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: 6,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "var(--muted)",
-        fontSize: 11,
-        fontFamily: "'Barlow Condensed', sans-serif",
-      }}>
-        WEATHER DATA LOADING…
-      </div>
-    );
-  }
-
-  const getIcon = () => {
-    if (weather.rainfall) return "🌧️";
-    if (weather.humidity > 70) return "☁️";
-    if (weather.airTemp > 28) return "☀️";
-    return "⛅";
-  };
-
-  return (
-    <div style={{
-      padding: "8px 14px",
-      background: "rgba(0,0,0,0.3)",
-      border: "1px solid rgba(255,255,255,0.08)",
-      borderRadius: 6,
-      display: "flex",
-      alignItems: "center",
-      gap: 12,
-      fontFamily: "'Barlow Condensed', sans-serif",
-      color: "var(--muted)",
-      fontSize: 11,
-      letterSpacing: 0.5,
-    }}>
-      <div style={{ fontSize: 18, lineHeight: 1 }}>{getIcon()}</div>
-      <div style={{ display: "flex", gap: 10 }}>
-        <div>Air <strong style={{ color: "#fff" }}>{weather.airTemp.toFixed(1)}°C</strong></div>
-        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
-          Track <strong style={{ color: "#fff" }}>{weather.trackTemp.toFixed(1)}°C</strong>
-        </div>
-        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
-          Humidity <strong style={{ color: "#fff" }}>{weather.humidity.toFixed(0)}%</strong>
-        </div>
-        <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 10 }}>
-          Wind <strong style={{ color: "#fff" }}>{weather.windSpeed.toFixed(1)} m/s</strong>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
@@ -2307,6 +2245,7 @@ interface CircuitMapProps {
   circuitId?: string;
   playing: boolean;
   speed: number;
+  sessionKey: number | null;
   onDriverClick?: (driverCode: string) => void;
 }
 
@@ -2318,9 +2257,19 @@ const CircuitMap: FC<CircuitMapProps> = ({
   circuitId,
   playing,
   speed,
+  sessionKey,
   onDriverClick
 }) => {
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
+  const { weather } = useWeatherData(sessionKey);
+
+  const getIcon = () => {
+    if (!weather) return "⛅";
+    if (weather.rainfall) return "🌧️";
+    if (weather.humidity > 70) return "☁️";
+    if (weather.airTemp > 28) return "☀️";
+    return "⛅";
+  };
 
   const rawPoints = CIRCUIT_COORDINATES[circuitId || ""] || CIRCUIT_COORDINATES.albert_park;
   const W = 600, H = 380;
@@ -2491,6 +2440,43 @@ const CircuitMap: FC<CircuitMapProps> = ({
         alignItems: "center",
         minHeight: 0,
       }}>
+        {/* Weather HUD Overlay - Broadcast Style */}
+        {weather && (
+          <div style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            background: "rgba(0, 0, 0, 0.7)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: 6,
+            padding: "5px 10px",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 10,
+            color: "rgba(255,255,255,0.75)",
+            letterSpacing: 0.5,
+            backdropFilter: "blur(4px)",
+            zIndex: 10,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+            pointerEvents: "none"
+          }}>
+            <span style={{ fontSize: 13, lineHeight: 1 }}>{getIcon()}</span>
+            <div style={{ display: "flex", gap: 8 }}>
+              <div>AIR <strong style={{ color: "#fff" }}>{weather.airTemp.toFixed(1)}°C</strong></div>
+              <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 8 }}>
+                TRACK <strong style={{ color: "#fff" }}>{weather.trackTemp.toFixed(1)}°C</strong>
+              </div>
+              <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 8 }}>
+                HUM <strong style={{ color: "#fff" }}>{weather.humidity.toFixed(0)}%</strong>
+              </div>
+              <div style={{ borderLeft: "1px solid rgba(255,255,255,0.15)", paddingLeft: 8 }}>
+                WIND <strong style={{ color: "#fff" }}>{weather.windSpeed.toFixed(1)}m/s</strong>
+              </div>
+            </div>
+          </div>
+        )}
         <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100%", maxHeight: "100%", display: "block" }}>
           {/* Outer glow track base */}
           <path d={pathD} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="22" strokeLinejoin="round" strokeLinecap="round" />
@@ -3353,8 +3339,7 @@ const RaceTrackerPage: FC = () => {
                     )}
                   </div>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-                  <WeatherHUD sessionKey={sessionKey} />
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div className="controls" style={{ margin: 0 }}>
                     <div className="lap-info">
                       LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
@@ -3404,6 +3389,7 @@ const RaceTrackerPage: FC = () => {
                   circuitId={activeRace.circuitId}
                   playing={playing}
                   speed={speed}
+                  sessionKey={sessionKey}
                   onDriverClick={(driverCode) => {
                     const d = drivers?.find(dr => dr.id === driverCode) ?? null;
                     setDrawerDriver(d);
