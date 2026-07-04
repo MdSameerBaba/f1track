@@ -26,13 +26,13 @@ type RaceSection = "fri" | "sat" | "race";
 type SpeedOption = { label: string; value: number };
 
 const SPEED_OPTIONS: SpeedOption[] = [
-  { label: "0.25× Speed", value: 4000 },
-  { label: "0.5× Speed", value: 2000 },
-  { label: "1× Speed", value: 1200 },
-  { label: "2× Speed", value: 600 },
-  { label: "5× Speed", value: 240 },
-  { label: "10× Speed", value: 100 },
-  { label: "20× Speed", value: 40 },
+  { label: "1× Speed", value: 10000 },
+  { label: "2× Speed", value: 5000 },
+  { label: "4× Speed", value: 2500 },
+  { label: "8× Speed", value: 1250 },
+  { label: "16× Speed", value: 600 },
+  { label: "32× Speed", value: 300 },
+  { label: "64× Speed", value: 150 },
 ];
 
 const AVAILABLE_YEARS = [2024, 2025, 2026] as const;
