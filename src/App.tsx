@@ -1795,7 +1795,6 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
 
   return (
     <div style={{
-      marginTop: 40,
       padding: "20px",
       backgroundColor: "rgba(0,0,0,0.3)",
       borderRadius: 8,
@@ -1985,7 +1984,6 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
   if (!raceIsLive) {
     return (
       <div style={{
-        marginTop: 40,
         padding: "20px",
         backgroundColor: "rgba(0,0,0,0.3)",
         borderRadius: 8,
@@ -2010,7 +2008,6 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
 
   return (
     <div style={{
-      marginTop: 40,
       padding: "20px",
       backgroundColor: "rgba(0,0,0,0.3)",
       borderRadius: 8,
@@ -3127,19 +3124,14 @@ const RaceTrackerPage: FC = () => {
             {/* ── 3-COLUMN BROADCAST LAYOUT ─────────────────────────────── */}
             <div style={{
               display: "grid",
-              gridTemplateColumns: "320px 1fr 300px",
-              gridTemplateRows: "auto",
+              gridTemplateColumns: "340px 1fr 300px",
+              gridTemplateRows: "auto auto",
               gap: 14,
               marginTop: 16,
               alignItems: "start",
             }}>
-              {/* LEFT — Position Chart + Live Feed stacked */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                <PositionChart
-                  lapData={effectiveLapData}
-                  drivers={drivers}
-                  currentLapIndex={lapIndex}
-                />
+              {/* LEFT TOP — Race Live Feed */}
+              <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
                 <LiveFeedPanel
                   lapData={effectiveLapData}
                   drivers={drivers}
@@ -3149,8 +3141,8 @@ const RaceTrackerPage: FC = () => {
                 />
               </div>
 
-              {/* CENTER — Circuit Map hero */}
-              <div>
+              {/* CENTER TOP — Circuit Map hero */}
+              <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2" }}>
                 <CircuitMap
                   lapData={effectiveLapData}
                   drivers={drivers}
@@ -3166,8 +3158,8 @@ const RaceTrackerPage: FC = () => {
                 />
               </div>
 
-              {/* RIGHT — Leaderboard */}
-              <div style={{ position: "sticky", top: 80 }}>
+              {/* RIGHT SIDE — Sticky Leaderboard spanning both rows */}
+              <div style={{ gridColumn: "3 / 4", gridRow: "1 / 3", position: "sticky", top: 80 }}>
                 <Leaderboard
                   lapData={effectiveLapData}
                   lapIndex={lapIndex}
@@ -3178,6 +3170,15 @@ const RaceTrackerPage: FC = () => {
                     const d = drivers?.find(dr => dr.id === driverCode) ?? null;
                     setDrawerDriver(d);
                   }}
+                />
+              </div>
+
+              {/* BOTTOM LEFT + CENTER — Position Chart spanning across cols 1 & 2 */}
+              <div style={{ gridColumn: "1 / 3", gridRow: "2 / 3" }}>
+                <PositionChart
+                  lapData={effectiveLapData}
+                  drivers={drivers}
+                  currentLapIndex={lapIndex}
                 />
               </div>
             </div>
