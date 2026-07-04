@@ -26,10 +26,13 @@ type RaceSection = "fri" | "sat" | "race";
 type SpeedOption = { label: string; value: number };
 
 const SPEED_OPTIONS: SpeedOption[] = [
-  { label: "1×", value: 1000 },
-  { label: "2×", value: 600 },
-  { label: "5×", value: 250 },
-  { label: "10×", value: 80 },
+  { label: "0.25× Speed", value: 4000 },
+  { label: "0.5× Speed", value: 2000 },
+  { label: "1× Speed", value: 1200 },
+  { label: "2× Speed", value: 600 },
+  { label: "5× Speed", value: 240 },
+  { label: "10× Speed", value: 100 },
+  { label: "20× Speed", value: 40 },
 ];
 
 const AVAILABLE_YEARS = [2024, 2025, 2026] as const;
@@ -454,7 +457,7 @@ const STYLES = `
     padding: 14px 20px;
     border-bottom: 1px solid var(--border);
     display: grid;
-    grid-template-columns: 48px 1fr 80px 100px;
+    grid-template-columns: 36px 1fr 40px 72px;
     gap: 8px;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 10px; font-weight: 700; letter-spacing: 2px;
@@ -467,7 +470,7 @@ const STYLES = `
   }
   .lb-row {
     display: grid;
-    grid-template-columns: 48px 1fr 80px 100px;
+    grid-template-columns: 36px 1fr 40px 72px;
     gap: 8px;
     padding: 0 20px;
     height: var(--row-h);
@@ -1799,6 +1802,10 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
       backgroundColor: "rgba(0,0,0,0.3)",
       borderRadius: 8,
       border: "1px solid rgba(255,255,255,0.1)",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      boxSizing: "border-box",
     }}>
       <div style={{
         fontSize: 14,
@@ -1812,7 +1819,7 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
         Position Changes Over Race
       </div>
 
-      <div style={{ width: "100%", height: 400, position: "relative" }}>
+      <div style={{ width: "100%", flex: 1, minHeight: "360px", position: "relative" }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
@@ -1990,6 +1997,11 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
         border: "1px solid rgba(255,255,255,0.1)",
         color: "var(--muted)",
         textAlign: "center",
+        height: "100%",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
       }}>
         <div style={{
           fontSize: 14,
@@ -2012,6 +2024,10 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
       backgroundColor: "rgba(0,0,0,0.3)",
       borderRadius: 8,
       border: "1px solid rgba(255,255,255,0.1)",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      boxSizing: "border-box",
     }}>
       <div style={{
         display: "flex",
@@ -2047,7 +2063,8 @@ const LiveFeedPanel: FC<LiveFeedPanelProps> = ({
       <div
         ref={feedRef}
         style={{
-          height: "200px",
+          flex: 1,
+          minHeight: "200px",
           overflowY: "auto",
           borderRadius: 4,
           backgroundColor: "rgba(0,0,0,0.2)",
@@ -3128,7 +3145,7 @@ const RaceTrackerPage: FC = () => {
               gridTemplateRows: "auto auto",
               gap: 14,
               marginTop: 16,
-              alignItems: "start",
+              alignItems: "stretch",
             }}>
               {/* LEFT TOP — Race Live Feed */}
               <div style={{ gridColumn: "1 / 2", gridRow: "1 / 2" }}>
