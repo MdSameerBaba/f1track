@@ -505,7 +505,7 @@ function formatLapTime(seconds: number): string {
   return `${mins}:${secs.padStart(6, "0")}`;
 }
 
-export function usePracticeData(season: number, countryName: string) {
+export function usePracticeData(season: number, countryName: string, cityHint?: string) {
   const [sessions, setSessions] = useState<PracticeSession[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -561,6 +561,17 @@ export function usePracticeData(season: number, countryName: string) {
         }
 
         if (practiceSessions.length === 0) throw new Error("No practice sessions found");
+
+        if (cityHint) {
+          const hint = cityHint.toLowerCase();
+          const filtered = practiceSessions.filter(s =>
+            s.circuit_short_name?.toLowerCase().includes(hint) ||
+            s.meeting_name?.toLowerCase().includes(hint)
+          );
+          if (filtered.length > 0) {
+            practiceSessions = filtered;
+          }
+        }
 
         const results: PracticeSession[] = [];
 
@@ -660,7 +671,7 @@ export function usePracticeData(season: number, countryName: string) {
 
     fetchPracticeData();
     return () => { cancelled = true; };
-  }, [season, countryName]);
+  }, [season, countryName, cityHint]);
 
   return { sessions, loading, error };
 }

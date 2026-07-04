@@ -6,7 +6,8 @@
  * Convert a 3-letter country code to flag emoji.
  * Uses regional indicator symbols.
  */
-export function countryCodeToFlag(code: string): string {
+export function countryCodeToFlag(code: string | null | undefined): string {
+  if (!code || typeof code !== "string") return "🏁";
   // Map common F1 nationality strings to 2-letter ISO codes
   const nationalityMap: Record<string, string> = {
     // 3-letter codes (OpenF1)

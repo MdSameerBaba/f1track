@@ -3350,7 +3350,7 @@ const RaceTrackerPage: FC = () => {
     sessions: practiceSessions,
     loading: practiceLoading,
     error: practiceError,
-  } = usePracticeData(sourceYear ?? selectedYear, activeRace?.countryCode ?? "");
+  } = usePracticeData(sourceYear ?? selectedYear, activeRace?.countryCode ?? "", activeRace?.city);
 
   const [lapIndex, setLapIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
