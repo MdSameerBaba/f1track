@@ -2809,7 +2809,7 @@ const NewsPage: FC = () => {
     setLoading(true);
 
     const f1Url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.formula1.com/en/latest/all.xml");
-    const skyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.skysports.com/rss/12040");
+    const skyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.skysports.com/rss/12433");
 
     const fetchF1 = fetch(f1Url)
       .then(r => r.json())
