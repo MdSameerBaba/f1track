@@ -1847,12 +1847,7 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
                 return [`P${pos}`, ""];
               }}
             />
-            <Legend
-              wrapperStyle={{ paddingTop: "20px" }}
-              iconType="line"
-            />
-
-            {/* Render a line for each active driver */}
+            {/* Custom Legend to replace Recharts Legend — completely stable height prevents layout shifts */}
             {activeDrivers.slice(0, 10).map((driverCode) => {
               const driver = drivers?.find(d => d.id === driverCode);
               const displayName = driver?.name.split(" ")[1] || driverCode;
@@ -1872,6 +1867,30 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
             })}
           </LineChart>
         </ResponsiveContainer>
+      </div>
+
+      {/* Stable Legend Container */}
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "10px 16px",
+        marginTop: "16px",
+        minHeight: "36px",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
+        {activeDrivers.slice(0, 10).map((code) => {
+          const driver = drivers?.find(d => d.id === code);
+          const color = driver?.color || "#888";
+          return (
+            <div key={code} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+              <div style={{ width: 12, height: 3, background: color, borderRadius: 1.5 }} />
+              <span style={{ fontWeight: 700, fontFamily: "'Barlow Condensed', sans-serif", color: "var(--text)" }}>
+                {driver?.name.split(" ")[1] || code}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       <div style={{
