@@ -2803,13 +2803,13 @@ const NewsPage: FC = () => {
   const [articles, setArticles]       = useState<NewsItem[]>([]);
   const [loading,  setLoading]        = useState(true);
   const [search,   setSearch]         = useState("");
-  const [source,   setSource]         = useState<"f1" | "reddit" | "all">("all");
+  const [source,   setSource]         = useState<"f1" | "sky" | "all">("all");
 
   useEffect(() => {
     setLoading(true);
 
     const f1Url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.formula1.com/en/latest/all.xml");
-    const redditUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.reddit.com/r/formula1/.rss");
+    const skyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.skysports.com/rss/12040");
 
     const fetchF1 = fetch(f1Url)
       .then(r => r.json())
@@ -2823,15 +2823,24 @@ const NewsPage: FC = () => {
           const link = item.querySelector("link")?.textContent || "";
           const pubDate = item.querySelector("pubDate")?.textContent || "";
           
-          // F1 media:thumbnail or enclosure url
           const enclosure = item.querySelector("enclosure")?.getAttribute("url") || "";
-          // Check namespaces if any
-          const mediaContent = item.getElementsByTagName("media:content")[0]?.getAttribute("url") ||
-                               item.getElementsByTagName("content")[0]?.getAttribute("url") || "";
+          let mediaContent = "";
+          const mediaContentElements = item.getElementsByTagName("media:content");
+          if (mediaContentElements.length > 0) {
+            mediaContent = mediaContentElements[0]?.getAttribute("url") || "";
+          }
+          if (!mediaContent) {
+            const mediaThumbnailElements = item.getElementsByTagName("media:thumbnail");
+            if (mediaThumbnailElements.length > 0) {
+              mediaContent = mediaThumbnailElements[0]?.getAttribute("url") || "";
+            }
+          }
+
+          const cleanDesc = desc.replace(/<[^>]*>/g, " ").trim();
 
           return {
             title,
-            description: desc.replace(/<[^>]*>/g, "").slice(0, 200),
+            description: cleanDesc.slice(0, 180) + (cleanDesc.length > 180 ? "..." : ""),
             link,
             pubDate,
             thumbnail: enclosure || mediaContent || "",
@@ -2845,45 +2854,51 @@ const NewsPage: FC = () => {
         return [];
       });
 
-    const fetchReddit = fetch(redditUrl)
+    const fetchSky = fetch(skyUrl)
       .then(r => r.json())
       .then(data => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(data.contents, "text/xml");
-        const entries = doc.querySelectorAll("entry");
-        return Array.from(entries).map(entry => {
-          const title = entry.querySelector("title")?.textContent || "";
-          const content = entry.querySelector("content")?.textContent || "";
-          // Reddit link is like <link href="..."/>
-          const link = entry.querySelector("link")?.getAttribute("href") || "";
-          const updated = entry.querySelector("updated")?.textContent || "";
+        const items = doc.querySelectorAll("item");
+        return Array.from(items).map(item => {
+          const title = item.querySelector("title")?.textContent || "";
+          const desc = item.querySelector("description")?.textContent || "";
+          const link = item.querySelector("link")?.textContent || "";
+          const pubDate = item.querySelector("pubDate")?.textContent || "";
 
-          // Extract img src from content html
-          let thumbnail = "";
-          const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
-          if (imgMatch) thumbnail = imgMatch[1];
+          const enclosure = item.querySelector("enclosure")?.getAttribute("url") || "";
+          let mediaContent = "";
+          const mediaContentElements = item.getElementsByTagName("media:content");
+          if (mediaContentElements.length > 0) {
+            mediaContent = mediaContentElements[0]?.getAttribute("url") || "";
+          }
+          if (!mediaContent) {
+            const mediaThumbnailElements = item.getElementsByTagName("media:thumbnail");
+            if (mediaThumbnailElements.length > 0) {
+              mediaContent = mediaThumbnailElements[0]?.getAttribute("url") || "";
+            }
+          }
 
-          // Strip HTML tags for clean description
-          const cleanDesc = content.replace(/<[^>]*>/g, " ").trim();
+          const cleanDesc = desc.replace(/<[^>]*>/g, " ").trim();
 
           return {
             title,
             description: cleanDesc.slice(0, 180) + (cleanDesc.length > 180 ? "..." : ""),
             link,
-            pubDate: updated,
-            thumbnail,
-            _source: "reddit",
-            _sourceLabel: "r/formula1",
+            pubDate,
+            thumbnail: enclosure || mediaContent || "",
+            _source: "sky",
+            _sourceLabel: "Sky Sports F1",
           };
         });
       })
       .catch((err) => {
-        console.error("Reddit RSS parse error:", err);
+        console.error("Sky Sports RSS parse error:", err);
         return [];
       });
 
-    Promise.all([fetchF1, fetchReddit]).then(([f1Articles, redditArticles]) => {
-      const combined = [...f1Articles, ...redditArticles].sort(
+    Promise.all([fetchF1, fetchSky]).then(([f1Articles, skyArticles]) => {
+      const combined = [...f1Articles, ...skyArticles].sort(
         (a: any, b: any) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
       setArticles(combined as any);
@@ -2936,13 +2951,13 @@ const NewsPage: FC = () => {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        {["all", "f1", "reddit"].map(s => (
+        {["all", "f1", "sky"].map(s => (
           <button
             key={s}
             className={`news-filter-btn${source === s ? " active" : ""}`}
             onClick={() => setSource(s as any)}
           >
-            {s === "all" ? "All Sources" : s === "f1" ? "F1 Official" : "Reddit"}
+            {s === "all" ? "All Sources" : s === "f1" ? "F1 Official" : "Sky Sports F1"}
           </button>
         ))}
       </div>
