@@ -363,7 +363,7 @@ export function useLiveRaceData(
             setIsLive(true);
             setDataSource("jolpica");
             setSourceYear(usedYear);
-            setSessionKey(null);
+            setSessionKey(foundSessionKey);
             setLoading(false);
             console.log("[F1TRACK] Jolpica: Loaded! P1:", laps[laps.length - 1]?.order?.[0]);
             return; // SUCCESS — done
