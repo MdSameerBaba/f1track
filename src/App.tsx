@@ -1916,7 +1916,6 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
                 );
               }}
             />
-            {/* Custom Legend to replace Recharts Legend — completely stable height prevents layout shifts */}
             {activeDrivers.slice(0, 10).map((driverCode) => {
               const driver = drivers?.find(d => d.id === driverCode);
               const displayName = driver?.name.split(" ")[1] || driverCode;
@@ -1927,8 +1926,7 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
                   dataKey={driverCode}
                   stroke={getDriverColor(driverCode)}
                   dot={false}
-                  isAnimationActive={true}
-                  animationDuration={500}
+                  isAnimationActive={false}
                   name={displayName}
                   strokeWidth={2}
                 />
