@@ -519,30 +519,45 @@ export function usePracticeData(season: number, countryName: string) {
       setError(null);
 
       try {
-        // Get all sessions for this country/year
-        const allSessions = await openf1.getSessions(season, countryName);
-        if (cancelled) return;
-
+        const years = [season, season - 1, 2024, 2023];
+        const uniqueYears = Array.from(new Set(years));
+        
+        let practiceSessions: any[] = [];
+        let resolvedYear = season;
         const practiceNames = ["Practice 1", "Practice 2", "Practice 3"];
-        const practiceSessions = allSessions.filter(s =>
-          practiceNames.includes(s.session_name)
-        );
 
-        if (practiceSessions.length === 0) {
+        for (const y of uniqueYears) {
+          if (cancelled) return;
+          // Get all sessions for this country/year
+          const allSessions = await openf1.getSessions(y, countryName).catch(() => []);
+          const matched = allSessions.filter(s =>
+            practiceNames.includes(s.session_name)
+          );
+
+          if (matched.length > 0) {
+            practiceSessions = matched;
+            resolvedYear = y;
+            break;
+          }
+
           // Try alternate country names
           const variants = [countryName];
           if (countryName === "UK") variants.push("Great Britain", "United Kingdom");
           if (countryName === "USA") variants.push("United States");
           if (countryName === "UAE") variants.push("United Arab Emirates", "Abu Dhabi");
 
+          let foundAlt = false;
           for (const v of variants.slice(1)) {
-            const alt = await openf1.getSessions(season, v);
+            const alt = await openf1.getSessions(y, v).catch(() => []);
             const altPractice = alt.filter(s => practiceNames.includes(s.session_name));
             if (altPractice.length > 0) {
-              practiceSessions.push(...altPractice);
+              practiceSessions = altPractice;
+              resolvedYear = y;
+              foundAlt = true;
               break;
             }
           }
+          if (foundAlt) break;
         }
 
         if (practiceSessions.length === 0) throw new Error("No practice sessions found");
@@ -552,71 +567,81 @@ export function usePracticeData(season: number, countryName: string) {
         for (const ps of practiceSessions) {
           if (cancelled) return;
 
-          const [driverData, lapRecords] = await Promise.all([
-            openf1.getDrivers(ps.session_key),
-            openf1.getLaps(ps.session_key),
-          ]);
+          try {
+            const [driverData, lapRecords] = await Promise.all([
+              openf1.getDrivers(ps.session_key),
+              openf1.getLaps(ps.session_key),
+            ]);
 
-          const numToDriver: Record<number, { code: string; name: string; team: string; flag: string; headshot?: string }> = {};
-          driverData.forEach(d => {
-            numToDriver[d.driver_number] = {
-              code: d.name_acronym,
-              name: d.full_name ?? d.broadcast_name,
-              team: d.team_name,
-              flag: countryCodeToFlag(d.country_code),
-              headshot: d.headshot_url,
-            };
-          });
-
-          // Find best lap per driver
-          const bestLaps: Record<number, typeof lapRecords[0]> = {};
-          lapRecords.forEach(l => {
-            if (l.lap_duration && l.lap_duration > 30 && l.lap_duration < 200) {
-              if (!bestLaps[l.driver_number] || l.lap_duration < bestLaps[l.driver_number].lap_duration!) {
-                bestLaps[l.driver_number] = l;
-              }
-            }
-          });
-
-          // Count total laps per driver
-          const lapCounts: Record<number, number> = {};
-          lapRecords.forEach(l => {
-            lapCounts[l.driver_number] = (lapCounts[l.driver_number] ?? 0) + 1;
-          });
-
-          const entries: PracticeEntry[] = Object.entries(bestLaps)
-            .filter(([num]) => numToDriver[Number(num)])
-            .map(([num, lap]) => {
-              const dnum = Number(num);
-              const d = numToDriver[dnum];
-              return {
-                position: 0,
-                id: d.code,
-                name: d.name,
-                team: d.team,
-                teamColor: teamColor(d.team),
-                flag: d.flag,
-                bestLap: lap.lap_duration!,
-                bestLapFormatted: formatLapTime(lap.lap_duration!),
-                sector1: lap.duration_sector_1,
-                sector2: lap.duration_sector_2,
-                sector3: lap.duration_sector_3,
-                lapCount: lapCounts[dnum] ?? 0,
-                gap: "",
-                headshot: d.headshot,
+            const numToDriver: Record<number, { code: string; name: string; team: string; flag: string; headshot?: string }> = {};
+            driverData.forEach(d => {
+              numToDriver[d.driver_number] = {
+                code: d.name_acronym,
+                name: d.full_name ?? d.broadcast_name,
+                team: d.team_name,
+                flag: countryCodeToFlag(d.country_code),
+                headshot: d.headshot_url,
               };
-            })
-            .sort((a, b) => a.bestLap - b.bestLap);
+            });
 
-          // Assign positions and gaps
-          const leaderTime = entries[0]?.bestLap ?? 0;
-          entries.forEach((e, i) => {
-            e.position = i + 1;
-            e.gap = i === 0 ? "LEADER" : `+${(e.bestLap - leaderTime).toFixed(3)}`;
-          });
+            // Find best lap per driver
+            const bestLaps: Record<number, typeof lapRecords[0]> = {};
+            lapRecords.forEach(l => {
+              if (l.lap_duration && l.lap_duration > 30 && l.lap_duration < 200) {
+                if (!bestLaps[l.driver_number] || l.lap_duration < bestLaps[l.driver_number].lap_duration!) {
+                  bestLaps[l.driver_number] = l;
+                }
+              }
+            });
 
-          const shortName = ps.session_name.replace("Practice ", "FP");
-          results.push({ name: shortName, entries });
+            // Count total laps per driver
+            const lapCounts: Record<number, number> = {};
+            lapRecords.forEach(l => {
+              lapCounts[l.driver_number] = (lapCounts[l.driver_number] ?? 0) + 1;
+            });
+
+            const entries: PracticeEntry[] = Object.entries(bestLaps)
+              .filter(([num]) => numToDriver[Number(num)])
+              .map(([num, lap]) => {
+                const dnum = Number(num);
+                const d = numToDriver[dnum];
+                return {
+                  position: 0,
+                  id: d.code,
+                  name: d.name,
+                  team: d.team,
+                  teamColor: teamColor(d.team),
+                  flag: d.flag,
+                  bestLap: lap.lap_duration!,
+                  bestLapFormatted: formatLapTime(lap.lap_duration!),
+                  sector1: lap.duration_sector_1,
+                  sector2: lap.duration_sector_2,
+                  sector3: lap.duration_sector_3,
+                  lapCount: lapCounts[dnum] ?? 0,
+                  gap: "",
+                  headshot: d.headshot,
+                };
+              })
+              .sort((a, b) => a.bestLap - b.bestLap);
+
+            // Assign positions and gaps
+            if (entries.length > 0) {
+              const leaderTime = entries[0].bestLap;
+              entries.forEach((e, i) => {
+                e.position = i + 1;
+                e.gap = i === 0 ? "LEADER" : `+${(e.bestLap - leaderTime).toFixed(3)}`;
+              });
+
+              const shortName = ps.session_name.replace("Practice ", "FP");
+              results.push({ name: shortName, entries });
+            }
+          } catch (sessionErr: any) {
+            console.warn(`[F1TRACK] Failed to load session ${ps.session_name}:`, sessionErr.message);
+          }
+        }
+
+        if (results.length === 0) {
+          throw new Error("Failed to load any practice session details");
         }
 
         if (!cancelled) {

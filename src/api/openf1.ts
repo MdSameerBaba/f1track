@@ -180,7 +180,21 @@ export async function getSessions(
   let url = `${BASE}/sessions?year=${year}`;
   if (countryName) {
     // Keep only letters, spaces, and hyphens (stripping emojis/flags/special characters)
-    const cleaned = countryName.replace(/[^\w\s-]/gi, "").trim();
+    let cleaned = countryName.replace(/[^\w\s-]/gi, "").trim();
+    const lower = cleaned.toLowerCase();
+    const COUNTRY_MAP: Record<string, string> = {
+      "usa": "United States",
+      "united states": "United States",
+      "uk": "United Kingdom",
+      "united kingdom": "United Kingdom",
+      "great britain": "United Kingdom",
+      "uae": "United Arab Emirates",
+      "united arab emirates": "United Arab Emirates",
+      "abu dhabi": "United Arab Emirates",
+    };
+    if (COUNTRY_MAP[lower]) {
+      cleaned = COUNTRY_MAP[lower];
+    }
     if (cleaned) {
       url += `&country_name=${encodeURIComponent(cleaned)}`;
     }
