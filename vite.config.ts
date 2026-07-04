@@ -52,6 +52,28 @@ export default defineConfig({
           });
         },
       },
+      // Proxy F1 News RSS feed to bypass CORS and Cloudflare blocks
+      '/api/rss/f1': {
+        target: 'https://www.formula1.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/rss\/f1/, '/en/latest/all.xml'),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/xml, application/xml, text/html'
+        }
+      },
+      // Proxy Sky Sports F1 RSS feed to bypass CORS and Cloudflare blocks
+      '/api/rss/sky': {
+        target: 'https://www.skysports.com',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api\/rss\/sky/, '/rss/12433'),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/xml, application/xml, text/html'
+        }
+      },
     },
   },
 });

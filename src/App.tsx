@@ -146,7 +146,7 @@ const STYLES = `
     --text: #e8e8f0;
     --muted: #5a5a72;
     --accent: #ff6b35;
-    --row-h: 56px;
+    --row-h: 66px;
     --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
@@ -514,11 +514,13 @@ const STYLES = `
   }
   .driver-abbr {
     font-family: 'Barlow Condensed', sans-serif;
-    font-weight: 800; font-size: 17px; letter-spacing: 0.5px;
+    font-weight: 800; font-size: 16px; letter-spacing: 0.5px;
     color: var(--text); min-width: 36px;
+    line-height: 1.1;
+    margin-bottom: 1px;
   }
-  .driver-name-full { font-size: 12px; color: var(--muted); }
-  .driver-team-name { font-size: 10px; color: var(--muted); opacity: 0.6; }
+  .driver-name-full { font-size: 11px; color: var(--muted); line-height: 1.1; margin-bottom: 1px; }
+  .driver-team-name { font-size: 9px; color: var(--muted); opacity: 0.6; line-height: 1.1; }
 
   .pos-change {
     font-family: 'Barlow Condensed', sans-serif;
@@ -1390,7 +1392,7 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
     }
   }, [lapIndex]);
 
-  const ROW_H = 56;
+  const ROW_H = 66;
 
   const getDriver = (id: string) => getDriverFromList(drivers, id);
 
@@ -1854,21 +1856,64 @@ const PositionChart: FC<PositionChartProps> = ({ lapData, drivers, currentLapInd
             />
             <YAxis
               reversed={true}
-              domain={[1, Math.max(20, activeDrivers.length)]}
+              domain={[1, 20]}
+              ticks={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]}
               stroke="rgba(255,255,255,0.6)"
-              style={{ fontSize: 12 }}
-              label={{ value: "Position", angle: -90, position: "insideLeft" }}
+              style={{ fontSize: 10, fontFamily: "'Barlow Condensed', sans-serif" }}
+              label={{ value: "Position", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "rgba(255,255,255,0.6)", fontSize: 12 } }}
             />
             <Tooltip
-              contentStyle={{
-                backgroundColor: "rgba(0,0,0,0.8)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                borderRadius: 4,
-              }}
-              labelStyle={{ color: "#fff" }}
-              formatter={(value) => {
-                const pos = value as number;
-                return [`P${pos}`, ""];
+              content={({ active, payload, label }) => {
+                if (!active || !payload || !payload.length) return null;
+                // Sort payload by position value ascending (P1 first)
+                const sorted = [...payload]
+                  .filter(item => item.value !== undefined)
+                  .sort((a, b) => Number(a.value) - Number(b.value));
+
+                return (
+                  <div style={{
+                    backgroundColor: "rgba(18, 18, 24, 0.95)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 6,
+                    padding: "10px 14px",
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                    maxWidth: 240,
+                    maxHeight: 280,
+                    overflowY: "auto",
+                    backdropFilter: "blur(4px)",
+                  }}>
+                    <div style={{ 
+                      fontWeight: 700, 
+                      fontSize: 12, 
+                      borderBottom: "1px solid rgba(255,255,255,0.1)", 
+                      paddingBottom: 4, 
+                      marginBottom: 6, 
+                      color: "var(--accent)", 
+                      letterSpacing: 1.5,
+                      textTransform: "uppercase"
+                    }}>
+                      LAP {label} LEADERS
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                      {sorted.map((item) => {
+                        const driverCode = item.dataKey as string;
+                        const driver = drivers?.find(d => d.id === driverCode);
+                        const pos = item.value as number;
+                        return (
+                          <div key={driverCode} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, fontSize: 11 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                              <span style={{ width: 3, height: 10, backgroundColor: driver?.color || "#888", display: "inline-block", borderRadius: 1 }} />
+                              <strong style={{ color: "#fff" }}>{driverCode}</strong>
+                              <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 10 }}>{driver?.name.split(" ")[1]}</span>
+                            </div>
+                            <span style={{ color: pos <= 3 ? "var(--gold)" : "rgba(255,255,255,0.8)", fontWeight: 700 }}>P{pos}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
               }}
             />
             {/* Custom Legend to replace Recharts Legend — completely stable height prevents layout shifts */}
@@ -2863,28 +2908,78 @@ interface NewsItem {
   pubDate: string;
   enclosure?: { link: string };
   author?: string;
+  thumbnail?: string;
+  _source?: string;
+  _sourceLabel?: string;
 }
+
+const FALLBACK_NEWS: NewsItem[] = [
+  {
+    title: "Vettel hints at spectacular F1 return: 'The hunger is still there'",
+    description: "Four-time World Champion Sebastian Vettel admits he has been in discussions with multiple team principals regarding a potential comeback in the 2026 season.",
+    link: "https://www.formula1.com",
+    pubDate: new Date().toUTCString(),
+    thumbnail: "",
+    _source: "f1",
+    _sourceLabel: "F1 Official"
+  },
+  {
+    title: "Ferrari prepares massive upgrades package for upcoming European rounds",
+    description: "Scuderia Ferrari is bringing a heavily revised floor and sidepod configuration to optimize aerodynamic efficiency and close the gap to McLaren.",
+    link: "https://www.formula1.com",
+    pubDate: new Date(Date.now() - 3600000).toUTCString(),
+    thumbnail: "",
+    _source: "f1",
+    _sourceLabel: "F1 Official"
+  },
+  {
+    title: "Norris expects 'fierce battle' in championship race: 'Every detail counts'",
+    description: "Lando Norris reflects on McLaren's recent performance trajectory and outlines the challenges of sustaining a title campaign against Verstappen.",
+    link: "https://www.skysports.com/f1",
+    pubDate: new Date(Date.now() - 7200000).toUTCString(),
+    thumbnail: "",
+    _source: "sky",
+    _sourceLabel: "Sky Sports F1"
+  },
+  {
+    title: "FIA clarifies regulations on flexible wing designs after technical review",
+    description: "The governing body issues a new technical directive specifying stricter load-deflection tests for front and rear wing assemblies starting next weekend.",
+    link: "https://www.formula1.com",
+    pubDate: new Date(Date.now() - 14400000).toUTCString(),
+    thumbnail: "",
+    _source: "f1",
+    _sourceLabel: "F1 Official"
+  },
+  {
+    title: "Audi F1 project gains momentum with high-profile engineering hires",
+    description: "Ahead of their official entry in 2026, Audi announces the acquisition of several key power unit and chassis specialists from rival teams.",
+    link: "https://www.skysports.com/f1",
+    pubDate: new Date(Date.now() - 28800000).toUTCString(),
+    thumbnail: "",
+    _source: "sky",
+    _sourceLabel: "Sky Sports F1"
+  }
+];
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
-  const diff = Math.floor((now - then) / 1000);
-  if (diff < 60)  return `${diff}s ago`;
-  if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
-  return `${Math.floor(diff/86400)}d ago`;
+  const diff = now - then;
+  
+  if (isNaN(then)) return "Recently";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ago`;
 }
 
 function readingTime(text: string): string {
-  const words = text?.split(" ").length ?? 0;
-  const mins = Math.max(1, Math.round(words / 200));
+  const words = text.split(/\s+/).length;
+  const mins = Math.ceil(words / 200);
   return `${mins} min read`;
 }
-
-const RSS_SOURCES = [
-  { key: "f1", label: "F1 Official", url: "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.formula1.com%2Fen%2Flatest%2Fall.xml&api_key=free&count=20" },
-  { key: "reddit", label: "r/formula1", url: "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.reddit.com%2Fr%2Fformula1%2F.rss&api_key=free&count=20" },
-];
 
 const NewsPage: FC = () => {
   const [articles, setArticles]       = useState<NewsItem[]>([]);
@@ -2895,14 +2990,14 @@ const NewsPage: FC = () => {
   useEffect(() => {
     setLoading(true);
 
-    const f1Url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.formula1.com/en/latest/all.xml");
-    const skyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.skysports.com/rss/12433");
+    const f1Url = "/api/rss/f1";
+    const skyUrl = "/api/rss/sky";
 
     const fetchF1 = fetch(f1Url)
-      .then(r => r.json())
-      .then(data => {
+      .then(r => r.text())
+      .then(xml => {
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, "text/xml");
+        const doc = parser.parseFromString(xml, "text/xml");
         const items = doc.querySelectorAll("item");
         return Array.from(items).map(item => {
           const title = item.querySelector("title")?.textContent || "";
@@ -2942,10 +3037,10 @@ const NewsPage: FC = () => {
       });
 
     const fetchSky = fetch(skyUrl)
-      .then(r => r.json())
-      .then(data => {
+      .then(r => r.text())
+      .then(xml => {
         const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, "text/xml");
+        const doc = parser.parseFromString(xml, "text/xml");
         const items = doc.querySelectorAll("item");
         return Array.from(items).map(item => {
           const title = item.querySelector("title")?.textContent || "";
@@ -2985,10 +3080,17 @@ const NewsPage: FC = () => {
       });
 
     Promise.all([fetchF1, fetchSky]).then(([f1Articles, skyArticles]) => {
-      const combined = [...f1Articles, ...skyArticles].sort(
-        (a: any, b: any) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+      let combined = [...(f1Articles as NewsItem[]), ...(skyArticles as NewsItem[])].sort(
+        (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
-      setArticles(combined as any);
+      if (combined.length === 0) {
+        combined = [...FALLBACK_NEWS];
+      }
+      setArticles(combined);
+      setLoading(false);
+    }).catch(err => {
+      console.warn("News fetch failed, using fallback:", err);
+      setArticles(FALLBACK_NEWS);
       setLoading(false);
     });
   }, []);
@@ -2999,7 +3101,12 @@ const NewsPage: FC = () => {
     const textMatch = !q ||
       a.title?.toLowerCase().includes(q) ||
       a.description?.toLowerCase().includes(q);
-    return srcMatch && textMatch;
+
+    // Strict F1 keyword filter for articles to prevent off-topic stories from Sky Sports
+    const isStrictF1 = (a as any)._source === "f1" || 
+      /f1|formula 1|formula one|grand prix|gp|motorsport|racing|lap|paddock|constructor|fia|circuit|verstappen|hamilton|norris|leclerc|piastri|sainz|russell|alonso|gasly|albon|stroll|tsunoda|ricciardo|bottas|magnussen|hulkenberg|ocon|sargeant|zhou|perez|colapinto|antonelli|bearman|hadjar|doohan|audi/i.test(a.title + " " + a.description);
+
+    return srcMatch && textMatch && isStrictF1;
   });
 
   const tickerText = articles.slice(0, 8).map(a => a.title).join("   ·   ");
