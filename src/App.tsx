@@ -2807,21 +2807,86 @@ const NewsPage: FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    const fetches = RSS_SOURCES.map(s =>
-      fetch(s.url)
-        .then(r => r.json())
-        .then((d: any) => (d.items || []).map((item: any) => ({
-          ...item,
-          _source: s.key,
-          _sourceLabel: s.label,
-        })))
-        .catch(() => [])
-    );
-    Promise.all(fetches).then(results => {
-      const allItems = results.flat().sort(
+
+    const f1Url = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.formula1.com/en/latest/all.xml");
+    const redditUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://www.reddit.com/r/formula1/.rss");
+
+    const fetchF1 = fetch(f1Url)
+      .then(r => r.json())
+      .then(data => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, "text/xml");
+        const items = doc.querySelectorAll("item");
+        return Array.from(items).map(item => {
+          const title = item.querySelector("title")?.textContent || "";
+          const desc = item.querySelector("description")?.textContent || "";
+          const link = item.querySelector("link")?.textContent || "";
+          const pubDate = item.querySelector("pubDate")?.textContent || "";
+          
+          // F1 media:thumbnail or enclosure url
+          const enclosure = item.querySelector("enclosure")?.getAttribute("url") || "";
+          // Check namespaces if any
+          const mediaContent = item.getElementsByTagName("media:content")[0]?.getAttribute("url") ||
+                               item.getElementsByTagName("content")[0]?.getAttribute("url") || "";
+
+          return {
+            title,
+            description: desc.replace(/<[^>]*>/g, "").slice(0, 200),
+            link,
+            pubDate,
+            thumbnail: enclosure || mediaContent || "",
+            _source: "f1",
+            _sourceLabel: "F1 Official",
+          };
+        });
+      })
+      .catch((err) => {
+        console.error("F1 RSS parse error:", err);
+        return [];
+      });
+
+    const fetchReddit = fetch(redditUrl)
+      .then(r => r.json())
+      .then(data => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, "text/xml");
+        const entries = doc.querySelectorAll("entry");
+        return Array.from(entries).map(entry => {
+          const title = entry.querySelector("title")?.textContent || "";
+          const content = entry.querySelector("content")?.textContent || "";
+          // Reddit link is like <link href="..."/>
+          const link = entry.querySelector("link")?.getAttribute("href") || "";
+          const updated = entry.querySelector("updated")?.textContent || "";
+
+          // Extract img src from content html
+          let thumbnail = "";
+          const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
+          if (imgMatch) thumbnail = imgMatch[1];
+
+          // Strip HTML tags for clean description
+          const cleanDesc = content.replace(/<[^>]*>/g, " ").trim();
+
+          return {
+            title,
+            description: cleanDesc.slice(0, 180) + (cleanDesc.length > 180 ? "..." : ""),
+            link,
+            pubDate: updated,
+            thumbnail,
+            _source: "reddit",
+            _sourceLabel: "r/formula1",
+          };
+        });
+      })
+      .catch((err) => {
+        console.error("Reddit RSS parse error:", err);
+        return [];
+      });
+
+    Promise.all([fetchF1, fetchReddit]).then(([f1Articles, redditArticles]) => {
+      const combined = [...f1Articles, ...redditArticles].sort(
         (a: any, b: any) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
-      setArticles(allItems as any);
+      setArticles(combined as any);
       setLoading(false);
     });
   }, []);
