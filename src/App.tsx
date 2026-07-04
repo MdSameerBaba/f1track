@@ -2591,7 +2591,14 @@ const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) =>
       // 2. Fall back to Serverless Webhook Sync — pulls entire session at once and caches to Firestore
       console.log(`[Radio] Firestore MISS — triggering serverless sync function for session ${sessionKey}...`);
       try {
-        const syncRes = await fetch(`/api/sync-radio?session_key=${sessionKey}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500); // 2.5s timeout
+        
+        const syncRes = await fetch(`/api/sync-radio?session_key=${sessionKey}`, {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         if (syncRes.ok) {
           const syncedData = await getRadioFromFirestore(sessionKey, driverNumber);
           if (syncedData && syncedData.length > 0) {
@@ -2603,7 +2610,7 @@ const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) =>
           }
         }
       } catch (err) {
-        console.warn("[Radio] Serverless sync failed or not deployed, falling back to direct fetch:", err);
+        console.warn("[Radio] Serverless sync timed out, failed, or not deployed, falling back to direct fetch:", err);
       }
 
       // 3. direct OpenF1 API fallback — use the /api/openf1 proxy
