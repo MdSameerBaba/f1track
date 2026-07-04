@@ -2330,12 +2330,17 @@ const CircuitMap: FC<CircuitMapProps> = ({
       border: "1px solid rgba(255,255,255,0.08)",
       borderRadius: 10,
       overflow: "hidden",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      boxSizing: "border-box",
     }}>
       {/* Header */}
       <div style={{
         padding: "14px 20px",
         display: "flex", alignItems: "center", gap: 12,
         borderBottom: "1px solid rgba(255,255,255,0.06)",
+        flexShrink: 0,
       }}>
         <div style={{
           fontFamily: "'Barlow Condensed', sans-serif",
@@ -2357,8 +2362,17 @@ const CircuitMap: FC<CircuitMapProps> = ({
       </div>
 
       {/* SVG Map */}
-      <div style={{ position: "relative", padding: "12px 12px 8px" }}>
-        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", display: "block" }}>
+      <div style={{
+        position: "relative",
+        padding: "12px",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: 0,
+      }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100%", maxHeight: "100%", display: "block" }}>
           {/* Outer glow track base */}
           <path d={pathD} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="22" strokeLinejoin="round" strokeLinecap="round" />
           {/* Track tarmac */}
@@ -2947,7 +2961,7 @@ const RaceTrackerPage: FC = () => {
 
   const [lapIndex, setLapIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [speed, setSpeed] = useState(600);
+  const [speed, setSpeed] = useState(2500);
   const [section, setSection] = useState<RaceSection>("race");
   const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
   // sessionKey is the OpenF1 session key; for now we approximate from the race
@@ -3131,7 +3145,7 @@ const RaceTrackerPage: FC = () => {
                   <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
                     className="speed-select">
                     {SPEED_OPTIONS.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label} Speed</option>
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
                 </div>
