@@ -2588,20 +2588,34 @@ const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) =>
         return;
       }
 
-      // 2. Fall back to OpenF1 API — use the /api/openf1 proxy to avoid CORS
-      console.log(`[Radio] Firestore MISS — fetching from OpenF1 via proxy...`);
+      // 2. Fall back to Serverless Webhook Sync — pulls entire session at once and caches to Firestore
+      console.log(`[Radio] Firestore MISS — triggering serverless sync function for session ${sessionKey}...`);
       try {
-        // Use the Vite dev proxy: /api/openf1 → https://api.openf1.org/v1
+        const syncRes = await fetch(`/api/sync-radio?session_key=${sessionKey}`);
+        if (syncRes.ok) {
+          const syncedData = await getRadioFromFirestore(sessionKey, driverNumber);
+          if (syncedData && syncedData.length > 0) {
+            console.log(`[Radio] Sync succeeded! Loaded ${syncedData.length} clips from Firestore.`);
+            setRadioClips(syncedData);
+            setRadioStatus("firestore-hit");
+            setRadioLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("[Radio] Serverless sync failed or not deployed, falling back to direct fetch:", err);
+      }
+
+      // 3. direct OpenF1 API fallback — use the /api/openf1 proxy
+      console.log(`[Radio] Direct fallback — fetching driver ${driverNumber} clips from OpenF1 via proxy...`);
+      try {
         const url = `/api/openf1/team_radio?session_key=${sessionKey}&driver_number=${driverNumber}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const clips = (data as any[]).map((c: any) => {
-          // recording_url comes from livetiming.formula1.com — rewrite via /api/f1audio proxy
           let audioUrl = c.recording_url ?? "";
           if (audioUrl.includes("livetiming.formula1.com")) {
-            // e.g. https://livetiming.formula1.com/static/2024/2024-03-02_Bahrain/...
-            // → /api/f1audio/static/2024/...
             audioUrl = audioUrl.replace("https://livetiming.formula1.com", "/api/f1audio");
           }
           return {
@@ -2609,18 +2623,16 @@ const DriverDrawer: FC<DriverDrawerProps> = ({ driver, sessionKey, onClose }) =>
             recording_url: audioUrl,
           };
         });
-        console.log(`[Radio] OpenF1 returned ${clips.length} clips`);
+        console.log(`[Radio] Direct fetch returned ${clips.length} clips`);
         setRadioClips(clips);
         setRadioStatus(clips.length > 0 ? "api-fetched" : "none");
 
-        // 3. Cache to Firestore (store original URLs so they're rewritten on next load too)
+        // Cache to Firestore so we don't hit OpenF1 again for this driver
         if (clips.length > 0) {
-          console.log("[Radio] Saving to Firestore...");
           await saveRadioToFirestore(sessionKey, driverNumber, clips);
-          console.log("[Radio] Saved to Firestore ✓");
         }
       } catch (err) {
-        console.error("[Radio] Fetch error:", err);
+        console.error("[Radio] Direct fetch error:", err);
         setRadioStatus("none");
       } finally {
         setRadioLoading(false);
