@@ -1,0 +1,36 @@
+# F1 Telemetry Tracker - Render Blueprint Configuration
+services:
+  - type: static
+    name: f1-telemetry-tracker
+    buildCommand: npm install && npm run build
+    publishPath: dist
+    routes:
+      # Proxy OpenF1 API requests to bypass CORS (maps to https://api.openf1.org/v1)
+      - source: /api/openf1/*
+        destination: https://api.openf1.org/v1/*
+        type: rewrite
+
+      # Proxy Jolpica API requests to bypass CORS (maps to https://api.jolpi.ca/ergast/f1)
+      - source: /api/jolpica/*
+        destination: https://api.jolpi.ca/ergast/f1/*
+        type: rewrite
+
+      # Proxy F1 livetiming CDN for team radio audio files to bypass CORS
+      - source: /api/f1audio/*
+        destination: https://livetiming.formula1.com/*
+        type: rewrite
+
+      # Proxy F1 News RSS feed to bypass CORS
+      - source: /api/rss/f1
+        destination: https://www.formula1.com/en/latest/all.xml
+        type: rewrite
+
+      # Proxy Sky Sports F1 RSS feed to bypass CORS
+      - source: /api/rss/sky
+        destination: https://www.skysports.com/rss/12433
+        type: rewrite
+
+      # Catch-all rewrite for React SPA client-side routing
+      - source: /*
+        destination: /index.html
+        type: rewrite
