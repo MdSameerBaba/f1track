@@ -16,6 +16,8 @@ import { getCircuitInfo, type CircuitInfo } from "./data/circuits";
 import { getRadioFromFirestore, saveRadioToFirestore } from "./api/firebase";
 import * as IDBCache from "./api/cache";
 import teamsData from "./data/teams.json";
+import confetti from "canvas-confetti";
+import { countryCodeToFlag } from "./api/mappings";
 
 // ── CONSTANTS ────────────────────────────────────────────────────────────────
 
@@ -3294,6 +3296,326 @@ const NewsPage: FC = () => {
   );
 };
 
+// ── PODIUM CELEBRATION ───────────────────────────────────────────────────────
+
+interface PodiumCelebrationProps {
+  activeRace: Race;
+  drivers: Driver[] | null;
+  finalOrder: string[];
+  selectedYear: number;
+  onClose: () => void;
+}
+
+const PodiumCelebration: FC<PodiumCelebrationProps> = ({
+  activeRace,
+  drivers,
+  finalOrder,
+  selectedYear,
+  onClose,
+}) => {
+  // Fire confetti when mounted
+  useEffect(() => {
+    // Initial blast
+    triggerConfetti();
+
+    // Set up recurring blast every 2.5 seconds
+    const interval = setInterval(() => {
+      triggerConfetti();
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const triggerConfetti = () => {
+    // Fire confetti from left corner
+    confetti({
+      particleCount: 80,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0.8 }
+    });
+    // Fire confetti from right corner
+    confetti({
+      particleCount: 80,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0.8 }
+    });
+  };
+
+  // Get top 3 drivers
+  const getDriver = (id: string) => {
+    return drivers?.find(d => d.id === id) || {
+      id,
+      number: "?",
+      name: `Driver #${id}`,
+      team: "Unknown Team",
+      color: "#888",
+    };
+  };
+
+  const p1 = finalOrder[0] ? getDriver(finalOrder[0]) : null;
+  const p2 = finalOrder[1] ? getDriver(finalOrder[1]) : null;
+  const p3 = finalOrder[2] ? getDriver(finalOrder[2]) : null;
+
+  return (
+    <div className="podium-overlay">
+      <style>{`
+        .podium-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(10, 10, 12, 0.96);
+          backdrop-filter: blur(12px);
+          z-index: 1000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-family: 'Inter', sans-serif;
+          animation: fadeIn 0.4s ease-out;
+        }
+        .podium-container {
+          max-width: 900px;
+          width: 90%;
+          text-align: center;
+        }
+        
+        .podium-header-title {
+          font-family: 'Barlow Condensed', sans-serif;
+          font-weight: 900;
+          font-size: 56px;
+          letter-spacing: -1px;
+          text-transform: uppercase;
+          margin-bottom: 8px;
+          line-height: 1.1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+        }
+        .podium-header-title span.flag {
+          font-size: 32px;
+          font-weight: 400;
+        }
+        .podium-header-subtitle {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.5);
+          letter-spacing: 1px;
+          margin-bottom: 24px;
+          font-weight: 500;
+        }
+        .podium-header-subtitle span.red-dash {
+          display: block;
+          width: 60px;
+          height: 3px;
+          background: #E8002D;
+          margin: 12px auto 0;
+        }
+
+        .podium-grid {
+          display: grid;
+          grid-template-columns: 1fr 1.2fr 1fr;
+          gap: 20px;
+          align-items: end;
+          margin: 40px 0 30px;
+        }
+        .podium-column {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        
+        .podium-avatar {
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-bottom: 16px;
+          font-family: 'Barlow Condensed', sans-serif;
+          font-weight: 900;
+          color: #fff;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+          transition: transform 0.3s ease;
+          position: relative;
+        }
+        .podium-column.p1 .podium-avatar {
+          width: 120px;
+          height: 120px;
+          font-size: 40px;
+          border: 3px solid #FFD700;
+        }
+        .podium-column.p2 .podium-avatar {
+          width: 100px;
+          height: 100px;
+          font-size: 32px;
+          border: 2px solid #C0C0C0;
+        }
+        .podium-column.p3 .podium-avatar {
+          width: 100px;
+          height: 100px;
+          font-size: 32px;
+          border: 2px solid #CD7F32;
+        }
+        .podium-avatar:hover {
+          transform: scale(1.05);
+        }
+
+        .podium-driver-name {
+          font-weight: 700;
+          font-size: 20px;
+          margin-bottom: 4px;
+          color: #fff;
+          font-family: 'Barlow Condensed', sans-serif;
+          letter-spacing: 0.5px;
+        }
+        .podium-column.p1 .podium-driver-name {
+          font-size: 24px;
+        }
+        .podium-driver-team {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.45);
+          margin-bottom: 20px;
+          font-weight: 500;
+        }
+
+        .podium-stand {
+          width: 100%;
+          background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-bottom: none;
+          border-radius: 16px 16px 0 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+        }
+        .podium-column.p1 .podium-stand {
+          height: 220px;
+        }
+        .podium-column.p2 .podium-stand {
+          height: 160px;
+        }
+        .podium-column.p3 .podium-stand {
+          height: 120px;
+        }
+        
+        .podium-stand-number {
+          font-family: 'Barlow Condensed', sans-serif;
+          font-weight: 900;
+          font-size: 80px;
+          line-height: 1;
+          margin-bottom: 8px;
+        }
+        .podium-column.p1 .podium-stand-number {
+          color: #E8002D;
+          font-size: 90px;
+        }
+        .podium-column.p2 .podium-stand-number {
+          color: #FF5722;
+        }
+        .podium-column.p3 .podium-stand-number {
+          color: #FFEB3B;
+        }
+        
+        .podium-trophy {
+          font-size: 24px;
+        }
+
+        .podium-team-bar {
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          height: 4px;
+          border-radius: 0;
+        }
+
+        .podium-close-btn {
+          margin-top: 24px;
+          background: #E8002D;
+          border: none;
+          color: #fff;
+          padding: 12px 28px;
+          font-family: 'Barlow Condensed', sans-serif;
+          font-weight: 700;
+          font-size: 14px;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 14px rgba(232, 0, 45, 0.4);
+        }
+        .podium-close-btn:hover {
+          background: #ff1a43;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(232, 0, 45, 0.6);
+        }
+      `}</style>
+      
+      <div className="podium-container">
+        <div className="podium-header-title">
+          <span className="flag">{activeRace.countryCode ? countryCodeToFlag(activeRace.countryCode) : "🏁"}</span>
+          {activeRace.countryCode} {activeRace.city}
+        </div>
+        <div className="podium-header-subtitle">
+          Race · {activeRace.dates?.sun || '8 Mar'} {selectedYear} · {selectedYear}
+          <span className="red-dash"></span>
+        </div>
+
+        <div className="podium-grid">
+          {/* P2 */}
+          {p2 && (
+            <div className="podium-column p2">
+              <div className="podium-avatar">{p2.number}</div>
+              <div className="podium-driver-name">{p2.name}</div>
+              <div className="podium-driver-team">{p2.team}</div>
+              <div className="podium-stand">
+                <div className="podium-stand-number">2</div>
+                <div className="podium-team-bar" style={{ backgroundColor: p2.color }} />
+              </div>
+            </div>
+          )}
+
+          {/* P1 */}
+          {p1 && (
+            <div className="podium-column p1">
+              <div className="podium-avatar">{p1.number}</div>
+              <div className="podium-driver-name">{p1.name}</div>
+              <div className="podium-driver-team">{p1.team}</div>
+              <div className="podium-stand">
+                <div className="podium-stand-number">1</div>
+                <div className="podium-trophy">🏆</div>
+                <div className="podium-team-bar" style={{ backgroundColor: p1.color }} />
+              </div>
+            </div>
+          )}
+
+          {/* P3 */}
+          {p3 && (
+            <div className="podium-column p3">
+              <div className="podium-avatar">{p3.number}</div>
+              <div className="podium-driver-name">{p3.name}</div>
+              <div className="podium-driver-team">{p3.team}</div>
+              <div className="podium-stand">
+                <div className="podium-stand-number">3</div>
+                <div className="podium-team-bar" style={{ backgroundColor: p3.color }} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button className="podium-close-btn" onClick={onClose}>
+          Close & View Telemetry
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // ── RACE TRACKER PAGE ────────────────────────────────────────────────────────
 
 
@@ -3355,6 +3677,7 @@ const RaceTrackerPage: FC = () => {
   const [speed, setSpeed] = useState(2500);
   const [section, setSection] = useState<RaceSection>("race");
   const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
+  const [showPodium, setShowPodium] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -3365,6 +3688,7 @@ const RaceTrackerPage: FC = () => {
   useEffect(() => {
     setPlaying(false);
     setLapIndex(0);
+    setShowPodium(false);
   }, [activeRace?.round, selectedYear]);
 
   // Playback interval
@@ -3372,7 +3696,11 @@ const RaceTrackerPage: FC = () => {
     if (playing && totalLaps > 0) {
       intervalRef.current = setInterval(() => {
         setLapIndex(i => {
-          if (i >= totalLaps) { setPlaying(false); return i; }
+          if (i >= totalLaps) {
+            setPlaying(false);
+            setShowPodium(true);
+            return i;
+          }
           return i + 1;
         });
       }, speed);
@@ -3380,9 +3708,21 @@ const RaceTrackerPage: FC = () => {
     return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [playing, speed, totalLaps]);
 
-  const reset = useCallback(() => { setPlaying(false); setLapIndex(0); }, []);
+  const reset = useCallback(() => {
+    setPlaying(false);
+    setLapIndex(0);
+    setShowPodium(false);
+  }, []);
   const togglePlay = useCallback(() => setPlaying(p => !p), []);
-  const handleScrub = useCallback((lap: number) => { setPlaying(false); setLapIndex(lap); }, []);
+  const handleScrub = useCallback((lap: number) => {
+    setPlaying(false);
+    setLapIndex(lap);
+    if (lap === totalLaps && totalLaps > 0) {
+      setShowPodium(true);
+    } else {
+      setShowPodium(false);
+    }
+  }, [totalLaps]);
 
   if (scheduleLoading) {
     return (
@@ -3539,6 +3879,21 @@ const RaceTrackerPage: FC = () => {
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                       ))}
                     </select>
+                    {lapIndex === totalLaps && totalLaps > 0 && (
+                      <button 
+                        className="btn" 
+                        style={{ 
+                          backgroundColor: "#E8002D", 
+                          color: "#fff", 
+                          fontWeight: 700, 
+                          boxShadow: "0 0 10px rgba(232, 0, 45, 0.4)",
+                          marginLeft: 8
+                        }}
+                        onClick={() => setShowPodium(true)}
+                      >
+                        🏆 PODIUM
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -3630,6 +3985,16 @@ const RaceTrackerPage: FC = () => {
           driver={drawerDriver}
           sessionKey={sessionKey}
           onClose={() => setDrawerDriver(null)}
+        />
+      )}
+      {/* Podium Celebration Modal */}
+      {showPodium && (
+        <PodiumCelebration
+          activeRace={activeRace}
+          drivers={drivers}
+          finalOrder={effectiveLapData[totalLaps]?.order ?? []}
+          selectedYear={selectedYear}
+          onClose={() => setShowPodium(false)}
         />
       )}
     </div>
