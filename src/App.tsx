@@ -1343,12 +1343,15 @@ interface LeaderboardProps {
   lapData: LapSnapshot[];
   lapIndex: number;
   totalLaps: number;
-  drivers: Driver[];
+  drivers: Driver[] | null;
   onScrub: (lap: number) => void;
   onDriverClick?: (driverCode: string) => void;
 }
 
-const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drivers, onScrub, onDriverClick }) => {
+const Leaderboard: FC<LeaderboardProps> = ({
+  lapData, lapIndex, totalLaps, drivers, onScrub, onDriverClick
+}) => {
+  const [viewMode, setViewMode] = useState<"standings" | "sectors">("standings");
   const prevOrderRef = useRef<string[]>([]);
   const [flashMap, setFlashMap] = useState<Record<string, "up" | "down">>({});
 
@@ -1394,12 +1397,83 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
     }
   }, [lapIndex]);
 
+  // Pre-calculate sector best times up to active lap index to draw purple / green color indicators
+  const sectorBest = useMemo(() => {
+    const personal: Record<string, { s1: number; s2: number; s3: number }> = {};
+    const absolute = { s1: Infinity, s2: Infinity, s3: Infinity };
+
+    // Loop through lap snapshots up to the current lapIndex
+    for (let l = 1; l <= lapIndex; l++) {
+      const snap = lapData[l];
+      if (!snap?.sectors) continue;
+
+      Object.entries(snap.sectors).forEach(([code, times]) => {
+        if (!personal[code]) {
+          personal[code] = { s1: Infinity, s2: Infinity, s3: Infinity };
+        }
+
+        if (times.s1 && times.s1 > 0) {
+          if (times.s1 < personal[code].s1) personal[code].s1 = times.s1;
+          if (times.s1 < absolute.s1) absolute.s1 = times.s1;
+        }
+        if (times.s2 && times.s2 > 0) {
+          if (times.s2 < personal[code].s2) personal[code].s2 = times.s2;
+          if (times.s2 < absolute.s2) absolute.s2 = times.s2;
+        }
+        if (times.s3 && times.s3 > 0) {
+          if (times.s3 < personal[code].s3) personal[code].s3 = times.s3;
+          if (times.s3 < absolute.s3) absolute.s3 = times.s3;
+        }
+      });
+    }
+    return { personal, absolute };
+  }, [lapData, lapIndex]);
+
   const ROW_H = 66;
 
-  const getDriver = (id: string) => getDriverFromList(drivers, id);
+  const getDriver = (id: string) => getDriverFromList(drivers || [], id);
+
+  const getTireBadge = (id: string) => {
+    const tire = currentSnap?.stints?.[id];
+    if (!tire) return null;
+    const compound = tire.compound.toUpperCase();
+    let color = "#888";
+    let initial = "M";
+    if (compound.includes("SOFT")) { color = "#ff1744"; initial = "S"; }
+    else if (compound.includes("MEDIUM")) { color = "#ffeb3b"; initial = "M"; }
+    else if (compound.includes("HARD")) { color = "#eceff1"; initial = "H"; }
+    else if (compound.includes("INTER")) { color = "#00e676"; initial = "I"; }
+    else if (compound.includes("WET")) { color = "#2979ff"; initial = "W"; }
+
+    return (
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 3,
+        fontFamily: "'Barlow Condensed', sans-serif",
+      }} title={`${compound} compound (age: ${tire.lapAge} laps)`}>
+        <span style={{
+          width: 12, height: 12, borderRadius: "50%",
+          border: `2.5px solid ${color}`, display: "inline-flex",
+          alignItems: "center", justifyContent: "center",
+          fontSize: 7, fontWeight: 900, color: "#fff",
+          lineHeight: 1, textShadow: "0 0 2px #000"
+        }}>
+          {initial}
+        </span>
+        <span style={{ opacity: 0.6, fontSize: 8 }}>{tire.lapAge}</span>
+      </div>
+    );
+  };
+
+  const gridTemplateColumns = viewMode === "standings"
+    ? "36px 1fr 48px 68px"
+    : "36px 1fr 50px 50px 50px";
 
   return (
     <div className="leaderboard">
+      {/* SC Banner */}
       {isSC && (
         <div className="sc-banner">
           <span style={{ fontSize: 20 }}>🟡</span>
@@ -1409,12 +1483,56 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
           </span>
         </div>
       )}
-      <div className="lb-header">
+
+      {/* Tabs Row */}
+      <div style={{ display: "flex", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.15)" }}>
+        <button
+          onClick={() => setViewMode("standings")}
+          style={{
+            flex: 1, padding: "8px", background: "none", border: "none",
+            borderBottom: viewMode === "standings" ? "2px solid var(--red)" : "2px solid transparent",
+            color: viewMode === "standings" ? "#fff" : "var(--muted)",
+            fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700,
+            letterSpacing: 1.5, cursor: "pointer", textTransform: "uppercase",
+            transition: "all 0.2s ease"
+          }}
+        >
+          📄 Standings
+        </button>
+        <button
+          onClick={() => setViewMode("sectors")}
+          style={{
+            flex: 1, padding: "8px", background: "none", border: "none",
+            borderBottom: viewMode === "sectors" ? "2px solid var(--red)" : "2px solid transparent",
+            color: viewMode === "sectors" ? "#fff" : "var(--muted)",
+            fontFamily: "'Barlow Condensed', sans-serif", fontSize: 11, fontWeight: 700,
+            letterSpacing: 1.5, cursor: "pointer", textTransform: "uppercase",
+            transition: "all 0.2s ease"
+          }}
+        >
+          ⏱ Sector Times
+        </button>
+      </div>
+
+      {/* Timing Sheet Header */}
+      <div className="lb-header" style={{ gridTemplateColumns, gap: 6, padding: "10px 16px" }}>
         <span>POS</span>
         <span>DRIVER</span>
-        <span style={{ textAlign: "center" }}>+/−</span>
-        <span style={{ textAlign: "right" }}>GAP</span>
+        {viewMode === "standings" ? (
+          <>
+            <span style={{ textAlign: "center" }}>TYRE</span>
+            <span style={{ textAlign: "right" }}>GAP</span>
+          </>
+        ) : (
+          <>
+            <span style={{ textAlign: "center" }}>SEC 1</span>
+            <span style={{ textAlign: "center" }}>SEC 2</span>
+            <span style={{ textAlign: "center" }}>SEC 3</span>
+          </>
+        )}
       </div>
+
+      {/* Dynamic List */}
       <div className="lb-list" style={{ height: (drivers?.length || 20) * ROW_H }}>
         {currentOrder.map((id, idx) => {
           const driver = getDriver(id);
@@ -1428,10 +1546,40 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
           const gapVal = gapTimes.current[id] ?? 0;
           const prevDriverId = idx > 0 ? currentOrder[idx - 1] : null;
           const prevGapVal = prevDriverId ? (gapTimes.current[prevDriverId] ?? 0) : 0;
-          const gapToAhead = idx > 0 ? gapVal - prevGapVal : 0;
+          const gapToAhead = idx > 0 && !isRetired ? gapVal - prevGapVal : 0;
           const hasDrs = idx > 0 && gapToAhead <= 1.0 && !isRetired;
 
           const gap = idx === 0 ? "INTERVAL" : `+${gapVal.toFixed(3)}s`;
+
+          // Sector calculations
+          const sectorData = currentSnap?.sectors?.[id];
+          let s1Text = "—";
+          let s1Color = "rgba(255,255,255,0.4)";
+          let s2Text = "—";
+          let s2Color = "rgba(255,255,255,0.4)";
+          let s3Text = "—";
+          let s3Color = "rgba(255,255,255,0.4)";
+
+          if (!isRetired && sectorData) {
+            if (sectorData.s1 && sectorData.s1 > 0) {
+              s1Text = sectorData.s1.toFixed(3);
+              if (sectorData.s1 <= sectorBest.absolute.s1) s1Color = "#d080ff"; // Purple
+              else if (sectorData.s1 <= (sectorBest.personal[id]?.s1 ?? Infinity)) s1Color = "#00e676"; // Green
+              else s1Color = "#fff"; // Normal
+            }
+            if (sectorData.s2 && sectorData.s2 > 0) {
+              s2Text = sectorData.s2.toFixed(3);
+              if (sectorData.s2 <= sectorBest.absolute.s2) s2Color = "#d080ff";
+              else if (sectorData.s2 <= (sectorBest.personal[id]?.s2 ?? Infinity)) s2Color = "#00e676";
+              else s2Color = "#fff";
+            }
+            if (sectorData.s3 && sectorData.s3 > 0) {
+              s3Text = sectorData.s3.toFixed(3);
+              if (sectorData.s3 <= sectorBest.absolute.s3) s3Color = "#d080ff";
+              else if (sectorData.s3 <= (sectorBest.personal[id]?.s3 ?? Infinity)) s3Color = "#00e676";
+              else s3Color = "#fff";
+            }
+          }
 
           return (
             <div
@@ -1441,36 +1589,71 @@ const Leaderboard: FC<LeaderboardProps> = ({ lapData, lapIndex, totalLaps, drive
                 top: idx * ROW_H, 
                 cursor: onDriverClick ? "pointer" : "default",
                 opacity: isRetired ? 0.55 : 1,
-                transition: "opacity 0.25s ease",
+                transition: "opacity 0.25s ease, top 0.55s var(--spring)",
+                gridTemplateColumns,
+                gap: 6,
+                padding: "0 16px"
               }}
               onClick={() => onDriverClick?.(id)}
               title={onDriverClick ? `Click to view ${driver.name} telemetry` : undefined}
             >
+              {/* Position */}
               <div className={`pos-num${pos === 1 ? " p1" : pos === 2 ? " p2" : pos === 3 ? " p3" : ""}`}>
                 {String(pos).padStart(2, "0")}
               </div>
+
+              {/* Driver Details Cell */}
               <div className="driver-cell">
-                <div className="team-bar" style={{ backgroundColor: driver.color, color: driver.color }} />
+                <div className="team-bar" style={{ backgroundColor: driver.color }} />
                 <div>
-                  <div className="driver-abbr">
-                    {driver.flag} {driver.id}
+                  <div className="driver-abbr" style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 4 }}>
+                    <span>{driver.flag}</span>
+                    <strong style={{ letterSpacing: 0.5 }}>{driver.id}</strong>
                     {isRetired && (
-                      <span style={{ backgroundColor: "#e10600", color: "#fff", fontSize: 8, fontWeight: 700, padding: "1px 5px", borderRadius: 3, marginLeft: 8, verticalAlign: "middle" }}>DNF</span>
+                      <span style={{ backgroundColor: "#e10600", color: "#fff", fontSize: 7, fontWeight: 700, padding: "1px 4px", borderRadius: 2 }}>DNF</span>
                     )}
                     {hasDrs && (
-                      <span style={{ backgroundColor: "#00e676", color: "#000", fontSize: 8, fontWeight: 800, padding: "1px 5px", borderRadius: 3, marginLeft: 8, verticalAlign: "middle" }}>DRS</span>
+                      <span style={{ backgroundColor: "#00e676", color: "#000", fontSize: 7, fontWeight: 800, padding: "1px 4px", borderRadius: 2 }}>DRS</span>
+                    )}
+                    {delta !== 0 && (
+                      <span style={{
+                        color: delta > 0 ? "#00e676" : "#ff1744",
+                        fontSize: 8,
+                        fontWeight: 700,
+                        marginLeft: 2
+                      }}>
+                        {delta > 0 ? `▲${delta}` : `▼${Math.abs(delta)}`}
+                      </span>
                     )}
                   </div>
-                  <div className="driver-name-full">{driver.name}</div>
-                  <div className="driver-team-name">{driver.team}</div>
+                  <div className="driver-name-full" style={{ fontSize: 10 }}>{driver.name}</div>
+                  <div className="driver-team-name" style={{ fontSize: 9 }}>{driver.team}</div>
                 </div>
               </div>
-              <div className={`pos-change ${delta > 0 ? "up" : delta < 0 ? "down" : "same"}`}>
-                {delta > 0 ? `▲ ${delta}` : delta < 0 ? `▼ ${Math.abs(delta)}` : "—"}
-              </div>
-              <div className={`gap-cell${idx === 0 ? " leader" : ""}`} style={{ color: isRetired ? "var(--red)" : undefined }}>
-                {isRetired ? "DNF" : gap}
-              </div>
+
+              {/* Dynamic Timing Columns depending on Mode */}
+              {viewMode === "standings" ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+                    {isRetired ? "—" : getTireBadge(id)}
+                  </div>
+                  <div className={`gap-cell${idx === 0 ? " leader" : ""}`} style={{ color: isRetired ? "var(--red)" : undefined, textAlign: "right", fontSize: 11 }}>
+                    {isRetired ? "DNF" : gap}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ textAlign: "center", color: s1Color, fontFamily: "monospace", fontSize: 10, fontWeight: 600 }}>
+                    {isRetired ? "—" : s1Text}
+                  </div>
+                  <div style={{ textAlign: "center", color: s2Color, fontFamily: "monospace", fontSize: 10, fontWeight: 600 }}>
+                    {isRetired ? "—" : s2Text}
+                  </div>
+                  <div style={{ textAlign: "center", color: s3Color, fontFamily: "monospace", fontSize: 10, fontWeight: 600 }}>
+                    {isRetired ? "—" : s3Text}
+                  </div>
+                </>
+              )}
             </div>
           );
         })}
