@@ -4,7 +4,7 @@ services:
     name: f1-telemetry-tracker
     env: static
     buildCommand: npm install && npm run build
-    publishPath: dist
+    staticPublishPath: dist
     routes:
       # Proxy OpenF1 API requests to bypass CORS (maps to https://api.openf1.org/v1)
       - source: /api/openf1/*
