@@ -3351,6 +3351,7 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
       name: `Driver #${id}`,
       team: "Unknown Team",
       color: "#888",
+      headshot: undefined as string | undefined,
     };
   };
 
@@ -3440,6 +3441,7 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
           box-shadow: 0 10px 30px rgba(0,0,0,0.5);
           transition: transform 0.3s ease;
           position: relative;
+          overflow: hidden;
         }
         .podium-column.p1 .podium-avatar {
           width: 120px;
@@ -3461,6 +3463,15 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
         }
         .podium-avatar:hover {
           transform: scale(1.05);
+        }
+        
+        .podium-headshot {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          object-fit: contain;
+          background: radial-gradient(circle, rgba(255,255,255,0.18) 0%, rgba(0,0,0,0.3) 100%);
+          display: block;
         }
 
         .podium-driver-name {
@@ -3570,7 +3581,13 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
           {/* P2 */}
           {p2 && (
             <div className="podium-column p2">
-              <div className="podium-avatar">{p2.number}</div>
+              <div className="podium-avatar">
+                {p2.headshot ? (
+                  <img src={p2.headshot} alt={p2.name} className="podium-headshot" />
+                ) : (
+                  p2.number
+                )}
+              </div>
               <div className="podium-driver-name">{p2.name}</div>
               <div className="podium-driver-team">{p2.team}</div>
               <div className="podium-stand">
@@ -3583,7 +3600,13 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
           {/* P1 */}
           {p1 && (
             <div className="podium-column p1">
-              <div className="podium-avatar">{p1.number}</div>
+              <div className="podium-avatar">
+                {p1.headshot ? (
+                  <img src={p1.headshot} alt={p1.name} className="podium-headshot" />
+                ) : (
+                  p1.number
+                )}
+              </div>
               <div className="podium-driver-name">{p1.name}</div>
               <div className="podium-driver-team">{p1.team}</div>
               <div className="podium-stand">
@@ -3597,7 +3620,13 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
           {/* P3 */}
           {p3 && (
             <div className="podium-column p3">
-              <div className="podium-avatar">{p3.number}</div>
+              <div className="podium-avatar">
+                {p3.headshot ? (
+                  <img src={p3.headshot} alt={p3.name} className="podium-headshot" />
+                ) : (
+                  p3.number
+                )}
+              </div>
               <div className="podium-driver-name">{p3.name}</div>
               <div className="podium-driver-team">{p3.team}</div>
               <div className="podium-stand">

@@ -263,6 +263,7 @@ export function useLiveRaceData(
           team: d.team_name,
           color: teamColor(d.team_name, d.team_colour),
           flag: countryCodeToFlag(d.country_code),
+          headshot: d.headshot_url || undefined,
         }));
 
         // Fetch Jolpica grid data for accurate starting positions
