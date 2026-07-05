@@ -215,7 +215,8 @@ export function useLiveRaceData(
   season: number,
   countryName: string,
   cityHint?: string,
-  round?: number
+  round?: number,
+  status?: string
 ) {
   const [lapData, setLapData] = useState<LapSnapshot[] | null>(null);
   const [drivers, setDrivers] = useState<Driver[]>(FALLBACK_DRIVERS);
@@ -331,6 +332,19 @@ export function useLiveRaceData(
         console.warn("[F1TRACK] OpenF1 failed:", openf1Err.message);
         // Even on failure, expose the found session key for team radio
         if (foundSessionKey && !cancelled) setSessionKey(foundSessionKey);
+
+        const isUpcomingRace = status === "next" || status === "upcoming";
+        if (isUpcomingRace) {
+          console.log("[F1TRACK] Upcoming race has no live session timing yet. Skipping fallback simulation.");
+          if (!cancelled) {
+            setLapData([]);
+            setDrivers([]);
+            setIsLive(false);
+            setDataSource("simulation");
+            setLoading(false);
+          }
+          return;
+        }
       }
 
       if (cancelled) return;

@@ -2536,6 +2536,7 @@ interface CircuitMapProps {
   speed: number;
   sessionKey: number | null;
   onDriverClick?: (driverCode: string) => void;
+  isLivePace?: boolean;
 }
 
 // ── Catmull-Rom → cubic Bézier SVG path conversion ──────────────────────
@@ -2575,7 +2576,8 @@ const CircuitMap: FC<CircuitMapProps> = ({
   playing,
   speed,
   sessionKey,
-  onDriverClick
+  onDriverClick,
+  isLivePace
 }) => {
   const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
   const { weather } = useWeatherData(sessionKey);
@@ -2758,6 +2760,36 @@ const CircuitMap: FC<CircuitMapProps> = ({
         alignItems: "center",
         minHeight: 0,
       }}>
+        {isLivePace && currentLapIndex === 0 && (
+          <div style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            background: "rgba(15, 15, 20, 0.95)",
+            border: "1.5px solid #FF3B30",
+            boxShadow: "0 0 25px rgba(255, 59, 48, 0.4)",
+            borderRadius: 8,
+            padding: "20px 24px",
+            textAlign: "center",
+            zIndex: 20,
+            animation: "grid-blink 2s infinite"
+          }}>
+            <style>{`
+              @keyframes grid-blink {
+                0%, 100% { opacity: 1; filter: drop-shadow(0 0 5px rgba(255, 59, 48, 0.4)); }
+                50% { opacity: 0.6; filter: drop-shadow(0 0 15px rgba(255, 59, 48, 0.8)); }
+              }
+            `}</style>
+            <div style={{ fontSize: 26, marginBottom: 8, animation: "grid-blink 1.5s infinite" }}>🚦</div>
+            <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 15, fontWeight: 900, color: "#fff", letterSpacing: 2 }}>
+              CARS ARE LINING UP ON THE GRID
+            </div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6, letterSpacing: 0.5 }}>
+              Green flag shortly. Awaiting Lap 1 telemetry stream...
+            </div>
+          </div>
+        )}
         {/* Weather HUD Overlay - Broadcast Style */}
         {weather && (
           <div style={{
@@ -4233,7 +4265,7 @@ const RaceTrackerPage: FC = () => {
     dataSource: raceDataSource,
     sourceYear,
     sessionKey,
-  } = useLiveRaceData(selectedYear, activeRace?.countryCode ?? "", activeRace?.city, activeRace?.round);
+  } = useLiveRaceData(selectedYear, activeRace?.countryCode ?? "", activeRace?.city, activeRace?.round, activeRace?.status);
   const showingPriorYear = raceIsLive && sourceYear !== null && sourceYear !== selectedYear;
 
   // Qualifying data
@@ -4432,7 +4464,6 @@ const RaceTrackerPage: FC = () => {
         ) : showCountdown ? (
           <UpcomingRaceDashboard
             activeRace={activeRace}
-            onViewSimulation={() => setBypassCountdown(true)}
             onJoinLiveStream={() => {
               setBypassCountdown(true);
               setIsLivePace(true);
@@ -4467,7 +4498,7 @@ const RaceTrackerPage: FC = () => {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  {raceIsLive && (
+                  {raceIsLive && activeRace.status !== "completed" && (
                     <button
                       className="btn"
                       onClick={() => setIsLivePace(p => !p)}
@@ -4564,6 +4595,7 @@ const RaceTrackerPage: FC = () => {
                     const d = drivers?.find(dr => dr.id === driverCode) ?? null;
                     setDrawerDriver(d);
                   }}
+                  isLivePace={isLivePace}
                 />
               </div>
 
