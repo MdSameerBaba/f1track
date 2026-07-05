@@ -1,7 +1,8 @@
 # F1 Telemetry Tracker - Render Blueprint Configuration
 services:
-  - type: static
+  - type: web
     name: f1-telemetry-tracker
+    env: static
     buildCommand: npm install && npm run build
     publishPath: dist
     routes:
