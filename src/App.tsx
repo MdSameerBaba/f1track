@@ -16,6 +16,8 @@ import { getCircuitInfo, type CircuitInfo } from "./data/circuits";
 import { getRadioFromFirestore, saveRadioToFirestore } from "./api/firebase";
 import * as IDBCache from "./api/cache";
 import teamsData from "./data/teams.json";
+import regulationsData from "./data/regulations.json";
+import driversExtraData from "./data/drivers-extra.json";
 import confetti from "canvas-confetti";
 import { countryCodeToFlag } from "./api/mappings";
 
@@ -4538,17 +4540,9 @@ const StandingsPage: FC = () => {
 // ── REGULATIONS PAGE ─────────────────────────────────────────────────────────
 
 const RegulationsPage: FC = () => {
-  const [regulations, setRegulations] = React.useState<any>(null);
   const [selectedYear, setSelectedYear] = React.useState(2026);
 
-  React.useEffect(() => {
-    fetch("/src/data/regulations.json")
-      .then(r => r.json())
-      .then(data => setRegulations(data))
-      .catch(() => console.warn("Regulations data not available"));
-  }, []);
-
-  const yearRegs = regulations?.regulations?.filter((r: any) => r.year === selectedYear) ?? [];
+  const yearRegs = regulationsData?.regulations?.filter((r: any) => r.year === selectedYear) ?? [];
 
   return (
     <div className="page">
@@ -4638,14 +4632,7 @@ const RegulationsPage: FC = () => {
 // ── TEAMS PAGE ───────────────────────────────────────────────────────────────
 
 const TeamsPage: FC = () => {
-  const [teams, setTeams] = React.useState<any[]>([]);
-
-  React.useEffect(() => {
-    fetch("/src/data/teams.json")
-      .then(r => r.json())
-      .then(data => setTeams(data.teams))
-      .catch(() => console.warn("Teams data not available"));
-  }, []);
+  const teams = teamsData?.teams ?? [];
 
   return (
     <div className="page">
@@ -4855,15 +4842,8 @@ const TeamsPage: FC = () => {
 // ── DRIVERS PAGE ─────────────────────────────────────────────────────────────
 
 const DriversPage: FC = () => {
-  const [drivers, setDrivers] = React.useState<any[]>([]);
+  const drivers = (driversExtraData?.drivers ?? []) as any[];
   const { races: yearRaces } = useSchedule(2026);
-
-  React.useEffect(() => {
-    fetch("/src/data/drivers-extra.json")
-      .then(r => r.json())
-      .then(data => setDrivers(data.drivers))
-      .catch(() => console.warn("Drivers data not available"));
-  }, []);
 
   return (
     <div className="page">
