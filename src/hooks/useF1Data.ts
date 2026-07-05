@@ -81,6 +81,21 @@ function jolpicaRaceToRace(jr: JolpicaRace, now: Date): Race {
     ? parseJolpicaDate(jr.Qualifying.date)
     : new Date(raceDate.getTime() - 86400000);
 
+  // Extract session start times (ISO strings)
+  const buildSessionTimestamp = (d: string, t?: string): string => {
+    if (!t) return `${d}T12:00:00Z`;
+    return t.endsWith("Z") ? `${d}T${t}` : `${d}T${t}Z`;
+  };
+
+  const sessions = {
+    fp1: jr.FirstPractice ? buildSessionTimestamp(jr.FirstPractice.date, jr.FirstPractice.time) : undefined,
+    fp2: jr.SecondPractice ? buildSessionTimestamp(jr.SecondPractice.date, jr.SecondPractice.time) : undefined,
+    fp3: jr.ThirdPractice ? buildSessionTimestamp(jr.ThirdPractice.date, jr.ThirdPractice.time) : undefined,
+    qualifying: jr.Qualifying ? buildSessionTimestamp(jr.Qualifying.date, jr.Qualifying.time) : undefined,
+    sprint: jr.Sprint ? buildSessionTimestamp(jr.Sprint.date, jr.Sprint.time) : undefined,
+    gp: buildSessionTimestamp(jr.date, jr.time),
+  };
+
   return {
     round: Number(jr.round),
     name: jr.raceName,
@@ -97,6 +112,7 @@ function jolpicaRaceToRace(jr: JolpicaRace, now: Date): Race {
     raceDate,
     sprint: hasSprint,
     status,
+    sessions,
   };
 }
 

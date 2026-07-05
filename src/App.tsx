@@ -2538,6 +2538,34 @@ interface CircuitMapProps {
   onDriverClick?: (driverCode: string) => void;
 }
 
+// ── Catmull-Rom → cubic Bézier SVG path conversion ──────────────────────
+// Converts control points into smooth C (cubicBezierTo) commands.
+// α = 0.5 = centripetal Catmull-Rom (best balance of smoothness & corner fidelity)
+const catmullRomToSVG = (pts: [number, number][], closed: boolean): string => {
+  if (pts.length < 3) {
+    return pts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+  }
+  const n = pts.length;
+  const getP = (i: number): [number, number] => pts[((i % n) + n) % n];
+  let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+  const segments = closed ? n : n - 1;
+  for (let i = 0; i < segments; i++) {
+    const p0 = getP(i - 1);
+    const p1 = getP(i);
+    const p2 = getP(i + 1);
+    const p3 = getP(i + 2);
+    // Catmull-Rom tangent vectors (tension 0.5)
+    const t = 0.5;
+    const cp1x = p1[0] + (p2[0] - p0[0]) * t / 3;
+    const cp1y = p1[1] + (p2[1] - p0[1]) * t / 3;
+    const cp2x = p2[0] - (p3[0] - p1[0]) * t / 3;
+    const cp2y = p2[1] - (p3[1] - p1[1]) * t / 3;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  }
+  if (closed) d += " Z";
+  return d;
+};
+
 const CircuitMap: FC<CircuitMapProps> = ({
   lapData,
   drivers,
@@ -2670,33 +2698,7 @@ const CircuitMap: FC<CircuitMapProps> = ({
     return <div style={{ padding: 20, color: "var(--muted)" }}>Loading circuit data…</div>;
   }
 
-  // ── Catmull-Rom → cubic Bézier SVG path conversion ──────────────────────
-  // Converts control points into smooth C (cubicBezierTo) commands.
-  // α = 0.5 = centripetal Catmull-Rom (best balance of smoothness & corner fidelity)
-  const catmullRomToSVG = (pts: [number, number][], closed: boolean): string => {
-    if (pts.length < 3) {
-      return pts.map(([x, y], i) => `${i === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
-    }
-    const n = pts.length;
-    const getP = (i: number): [number, number] => pts[((i % n) + n) % n];
-    let d = `M ${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
-    const segments = closed ? n : n - 1;
-    for (let i = 0; i < segments; i++) {
-      const p0 = getP(i - 1);
-      const p1 = getP(i);
-      const p2 = getP(i + 1);
-      const p3 = getP(i + 2);
-      // Catmull-Rom tangent vectors (tension 0.5)
-      const t = 0.5;
-      const cp1x = p1[0] + (p2[0] - p0[0]) * t / 3;
-      const cp1y = p1[1] + (p2[1] - p0[1]) * t / 3;
-      const cp2x = p2[0] - (p3[0] - p1[0]) * t / 3;
-      const cp2y = p2[1] - (p3[1] - p1[1]) * t / 3;
-      d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
-    }
-    if (closed) d += " Z";
-    return d;
-  };
+  // catmullRomToSVG utility now referenced globally from the file scope
 
   // Generate SVG path string from the active circuit coordinates
   const pathD = catmullRomToSVG(rawPoints, true);
@@ -3836,6 +3838,362 @@ const PodiumCelebration: FC<PodiumCelebrationProps> = ({
   );
 };
 
+// ── COUNTRY TIMEZONES DATABASE ───────────────────────────────────────────────
+const COUNTRY_TIMEZONES: Record<string, string> = {
+  Bahrain: "Asia/Bahrain",
+  "Saudi Arabia": "Asia/Riyadh",
+  Australia: "Australia/Melbourne",
+  Japan: "Asia/Tokyo",
+  China: "Asia/Shanghai",
+  USA: "America/New_York", // Miami default
+  Monaco: "Europe/Monaco",
+  Canada: "America/Toronto",
+  Spain: "Europe/Madrid",
+  Austria: "Europe/Vienna",
+  UK: "Europe/London",
+  Hungary: "Europe/Budapest",
+  Belgium: "Europe/Brussels",
+  Netherlands: "Europe/Amsterdam",
+  Italy: "Europe/Rome",
+  Azerbaijan: "Asia/Baku",
+  Singapore: "Asia/Singapore",
+  Mexico: "America/Mexico_City",
+  Brazil: "America/Sao_Paulo",
+  Qatar: "Asia/Qatar",
+  UAE: "Asia/Dubai",
+};
+
+interface UpcomingRaceDashboardProps {
+  activeRace: Race;
+  onViewSimulation?: () => void;
+  onJoinLiveStream?: () => void;
+}
+
+const UpcomingRaceDashboard: FC<UpcomingRaceDashboardProps> = ({ 
+  activeRace, 
+  onViewSimulation,
+  onJoinLiveStream 
+}) => {
+  const gpInfo = getCircuitInfo(activeRace.circuitId, activeRace.circuit);
+  const rawPoints = CIRCUIT_COORDINATES[activeRace.circuitId || ""] || CIRCUIT_COORDINATES.albert_park;
+  const pathD = catmullRomToSVG(rawPoints, true);
+
+  // Resolve session times (default estimates if undefined)
+  const gpDate = new Date(activeRace.raceDate);
+  const sessions = useMemo(() => {
+    const buildDate = (isoStr?: string, fallbackOffsetMs = 0) => {
+      return isoStr ? new Date(isoStr) : new Date(gpDate.getTime() + fallbackOffsetMs);
+    };
+    return [
+      { name: "Friday Practice 1 (FP1)", key: "fp1", date: buildDate(activeRace.sessions?.fp1, -2 * 86400000 + 12 * 3600000) },
+      { name: "Friday Practice 2 (FP2)", key: "fp2", date: buildDate(activeRace.sessions?.fp2, -2 * 86400000 + 15 * 3600000) },
+      { name: "Saturday Practice 3 (FP3)", key: "fp3", date: buildDate(activeRace.sessions?.fp3, -86400000 + 12 * 3600000) },
+      { name: "Saturday Qualifying", key: "qualifying", date: buildDate(activeRace.sessions?.qualifying, -86400000 + 15 * 3600000) },
+      { name: "Grand Prix", key: "gp", date: buildDate(activeRace.sessions?.gp, 0) },
+    ];
+  }, [activeRace, gpDate]);
+
+  const [selectedSessionKey, setSelectedSessionKey] = useState<string>("gp");
+  const activeSession = useMemo(() => {
+    return sessions.find(s => s.key === selectedSessionKey) || sessions[4];
+  }, [sessions, selectedSessionKey]);
+
+  // Countdown timer state
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: false });
+
+  useEffect(() => {
+    const target = activeSession.date.getTime();
+    const update = () => {
+      const now = new Date().getTime();
+      const diff = target - now;
+      if (diff <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true });
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ days, hours, minutes, seconds, isPast: false });
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [activeSession]);
+
+  // Resolve Track timezone
+  const trackTimezone = useMemo(() => {
+    const country = activeRace.countryCode || activeRace.country;
+    // Map flag country emoji or clean country string to timezone
+    const cleanCountry = country.replace(/[\uD83C-\uDBFF\uDC00-\uDFFF]/g, "").trim();
+    return COUNTRY_TIMEZONES[cleanCountry] || COUNTRY_TIMEZONES[activeRace.country] || "Europe/London";
+  }, [activeRace]);
+
+  const formatTZ = (date: Date, tz?: string, type: "time" | "date" = "time") => {
+    try {
+      const options: Intl.DateTimeFormatOptions = tz ? { timeZone: tz } : {};
+      if (type === "time") {
+        options.hour = "2-digit";
+        options.minute = "2-digit";
+        options.hour12 = true;
+        return date.toLocaleTimeString(undefined, options);
+      } else {
+        options.weekday = "short";
+        options.month = "short";
+        options.day = "numeric";
+        return date.toLocaleDateString(undefined, options);
+      }
+    } catch {
+      return date.toLocaleTimeString();
+    }
+  };
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, marginTop: 20 }}>
+      {/* LEFT COLUMN: HERO COUNTDOWN, SESSIONS, AND WORLD CLOCKS */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Countdown card */}
+        <div style={{
+          background: "rgba(30, 30, 40, 0.45)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: 12,
+          padding: 24,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          position: "relative",
+          overflow: "hidden"
+        }}>
+          {/* Subtle animated light sweep */}
+          <div style={{
+            position: "absolute", top: 0, left: 0, right: 0, height: 2,
+            background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
+            opacity: 0.8
+          }} />
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+            <div>
+              <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: "var(--accent)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase" }}>
+                UPCOMING SESSION COUNTDOWN
+              </div>
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginTop: 4 }}>
+                {activeSession.name}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {onViewSimulation && (
+                <button
+                  className="btn secondary"
+                  onClick={onViewSimulation}
+                  style={{ fontSize: 11, padding: "6px 12px", border: "1px solid rgba(255,255,255,0.15)" }}
+                >
+                  💻 RUN SIMULATION
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Countdown block row */}
+          <div style={{ display: "flex", gap: 16, justifyContent: "center", margin: "24px 0" }}>
+            {[
+              { label: "DAYS", val: timeLeft.days },
+              { label: "HOURS", val: timeLeft.hours },
+              { label: "MINUTES", val: timeLeft.minutes },
+              { label: "SECONDS", val: timeLeft.seconds }
+            ].map(b => (
+              <div key={b.label} style={{
+                background: "rgba(0,0,0,0.4)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 8,
+                width: 90,
+                padding: "16px 10px",
+                textAlign: "center"
+              }}>
+                <div style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 900,
+                  fontSize: 38,
+                  color: timeLeft.isPast ? "var(--muted)" : "#fff",
+                  lineHeight: 1
+                }}>
+                  {String(b.val).padStart(2, "0")}
+                </div>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)", letterSpacing: 1.5, marginTop: 6 }}>
+                  {b.label}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Live stream JOIN CTA */}
+          {timeLeft.isPast ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", margin: "16px 0", gap: 12 }}>
+              <div style={{ color: "#00e676", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="live-pulse" style={{ width: 8, height: 8, backgroundColor: "#00e676", borderRadius: "50%", display: "inline-block" }} />
+                SESSION IS CURRENTLY UNDERWAY / COMPLETED
+              </div>
+              {onJoinLiveStream && (
+                <button
+                  className="btn"
+                  onClick={onJoinLiveStream}
+                  style={{
+                    backgroundColor: "#00e676",
+                    color: "#000",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    padding: "10px 24px",
+                    borderRadius: 6,
+                    boxShadow: "0 0 16px rgba(0, 230, 118, 0.5)",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    border: "none"
+                  }}
+                >
+                  📺 JOIN LIVE TIMING STREAM
+                </button>
+              )}
+            </div>
+          ) : null}
+
+          {/* Session Selector row */}
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginTop: 12 }}>
+            {sessions.map(s => (
+              <button
+                key={s.key}
+                onClick={() => setSelectedSessionKey(s.key)}
+                style={{
+                  padding: "8px 12px",
+                  background: selectedSessionKey === s.key ? "var(--red)" : "rgba(255,255,255,0.05)",
+                  border: selectedSessionKey === s.key ? "none" : "1px solid rgba(255,255,255,0.08)",
+                  borderRadius: 4,
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "all 0.2s"
+                }}
+              >
+                {s.key === "gp" ? "🏁 RACE DAY" : s.key.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* World clocks grid */}
+        <div style={{
+          background: "rgba(30, 30, 40, 0.45)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: 12,
+          padding: 20,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)"
+        }}>
+          <div style={{ fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: "var(--accent)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 16 }}>
+            WORLD CLOCKS (SESSION START)
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
+            {[
+              { title: "YOUR LOCAL TIME", tz: undefined, icon: "👤" },
+              { title: `TRACK TIME (${activeRace.city})`, tz: trackTimezone, icon: "🏎️" },
+              { title: "F1 HQ (LONDON)", tz: "Europe/London", icon: "🇬🇧" },
+              { title: "UTC STANDARD", tz: "UTC", icon: "🌐" }
+            ].map(c => (
+              <div key={c.title} style={{
+                background: "rgba(0,0,0,0.25)",
+                border: "1px solid rgba(255,255,255,0.04)",
+                borderRadius: 8,
+                padding: "14px 12px"
+              }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+                  <span>{c.icon}</span> {c.title}
+                </div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginTop: 6, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                  {formatTZ(activeSession.date, c.tz, "time")}
+                </div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 2 }}>
+                  {formatTZ(activeSession.date, c.tz, "date")}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: CIRCUIT MAP PREVIEW AND WEEKEND FACTS */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+        {/* Track Preview Card */}
+        <div style={{
+          background: "rgba(30, 30, 40, 0.45)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: 12,
+          padding: 20,
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center"
+        }}>
+          <div style={{ alignSelf: "flex-start", fontFamily: "'Barlow Condensed', sans-serif", fontSize: 13, color: "var(--accent)", fontWeight: 700, letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
+            CIRCUIT LAYOUT PREVIEW
+          </div>
+
+          <div style={{ width: "100%", height: 220, display: "flex", justifyContent: "center", alignItems: "center", position: "relative" }}>
+            {pathD ? (
+              <svg width="100%" height="100%" viewBox="0 0 600 380" style={{ maxWidth: "100%", maxHeight: "100%" }}>
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.06)"
+                  strokeWidth={22}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d={pathD}
+                  fill="none"
+                  stroke="var(--red)"
+                  strokeWidth={3.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    filter: "drop-shadow(0 0 8px var(--red))"
+                  }}
+                />
+              </svg>
+            ) : (
+              <div style={{ color: "var(--muted)", fontSize: 12 }}>No track layout spline available</div>
+            )}
+          </div>
+
+          {/* Track details row */}
+          {gpInfo && (
+            <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 14 }}>
+              <div>
+                <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 700, letterSpacing: 1 }}>TRACK NAME</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginTop: 2 }}>{gpInfo.name}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 700, letterSpacing: 1 }}>LAP RECORD</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", marginTop: 2 }}>{gpInfo.lapRecord}</div>
+              </div>
+              <div style={{ marginTop: 6 }}>
+                <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 700, letterSpacing: 1 }}>TRACK LENGTH</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginTop: 2 }}>{gpInfo.lengthKm} km</div>
+              </div>
+              <div style={{ marginTop: 6 }}>
+                <div style={{ fontSize: 9, color: "var(--muted)", fontWeight: 700, letterSpacing: 1 }}>NUMBER OF TURNS</div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginTop: 2 }}>{gpInfo.turns} Turns</div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── RACE TRACKER PAGE ────────────────────────────────────────────────────────
 
 
@@ -3899,6 +4257,7 @@ const RaceTrackerPage: FC = () => {
   const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
   const [showPodium, setShowPodium] = useState(false);
   const [isLivePace, setIsLivePace] = useState(false);
+  const [bypassCountdown, setBypassCountdown] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -3911,7 +4270,11 @@ const RaceTrackerPage: FC = () => {
     setLapIndex(0);
     setShowPodium(false);
     setIsLivePace(false);
+    setBypassCountdown(false);
   }, [activeRace?.round, selectedYear]);
+
+  const isUpcoming = activeRace?.status === "upcoming" || activeRace?.status === "next";
+  const showCountdown = isUpcoming && !bypassCountdown && !sessionKey;
 
   // Lock playhead to latest completed lap when Live Pace is active
   useEffect(() => {
@@ -4066,6 +4429,15 @@ const RaceTrackerPage: FC = () => {
             LOADING RACE DATA…
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
+        ) : showCountdown ? (
+          <UpcomingRaceDashboard
+            activeRace={activeRace}
+            onViewSimulation={() => setBypassCountdown(true)}
+            onJoinLiveStream={() => {
+              setBypassCountdown(true);
+              setIsLivePace(true);
+            }}
+          />
         ) : (
           <>
             <div className="race-header">

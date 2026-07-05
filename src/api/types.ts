@@ -210,6 +210,14 @@ export interface Race {
   raceDate: Date;
   sprint: boolean;
   status: "completed" | "next" | "upcoming";
+  sessions?: {
+    fp1?: string;
+    fp2?: string;
+    fp3?: string;
+    qualifying?: string;
+    sprint?: string;
+    gp?: string;
+  };
 }
 
 export interface LapSnapshot {
