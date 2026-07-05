@@ -1437,7 +1437,7 @@ const Leaderboard: FC<LeaderboardProps> = ({
 
   const getTireBadge = (id: string) => {
     const tire = currentSnap?.stints?.[id];
-    if (!tire) return null;
+    if (!tire || !tire.compound) return null;
     const compound = tire.compound.toUpperCase();
     let color = "#888";
     let initial = "M";
