@@ -1348,10 +1348,11 @@ interface LeaderboardProps {
   drivers: Driver[] | null;
   onScrub: (lap: number) => void;
   onDriverClick?: (driverCode: string) => void;
+  isLivePace?: boolean;
 }
 
 const Leaderboard: FC<LeaderboardProps> = ({
-  lapData, lapIndex, totalLaps, drivers, onScrub, onDriverClick
+  lapData, lapIndex, totalLaps, drivers, onScrub, onDriverClick, isLivePace
 }) => {
   const [viewMode, setViewMode] = useState<"standings" | "sectors">("standings");
   const prevOrderRef = useRef<string[]>([]);
@@ -1666,6 +1667,11 @@ const Leaderboard: FC<LeaderboardProps> = ({
           type="range" min={0} max={totalLaps} value={lapIndex}
           className="replay-slider"
           onChange={e => onScrub(Number(e.target.value))}
+          disabled={isLivePace}
+          style={{
+            opacity: isLivePace ? 0.35 : 1,
+            pointerEvents: isLivePace ? "none" : "auto"
+          }}
         />
         <span className="replay-label">LAP {totalLaps}</span>
       </div>
@@ -3892,6 +3898,7 @@ const RaceTrackerPage: FC = () => {
   const [section, setSection] = useState<RaceSection>("race");
   const [drawerDriver, setDrawerDriver] = useState<Driver | null>(null);
   const [showPodium, setShowPodium] = useState(false);
+  const [isLivePace, setIsLivePace] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -3903,7 +3910,16 @@ const RaceTrackerPage: FC = () => {
     setPlaying(false);
     setLapIndex(0);
     setShowPodium(false);
+    setIsLivePace(false);
   }, [activeRace?.round, selectedYear]);
+
+  // Lock playhead to latest completed lap when Live Pace is active
+  useEffect(() => {
+    if (isLivePace && totalLaps > 0) {
+      setLapIndex(totalLaps);
+      setPlaying(false);
+    }
+  }, [isLivePace, totalLaps]);
 
   // Playback interval
   useEffect(() => {
@@ -4079,36 +4095,64 @@ const RaceTrackerPage: FC = () => {
                   </div>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                  <div className="controls" style={{ margin: 0 }}>
-                    <div className="lap-info">
-                      LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
-                    </div>
-                    <button className="btn secondary" onClick={reset}>↺ RESET</button>
-                    <button className="btn" onClick={togglePlay}>
-                      {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
+                  {raceIsLive && (
+                    <button
+                      className="btn"
+                      onClick={() => setIsLivePace(p => !p)}
+                      style={{
+                        backgroundColor: isLivePace ? "#00e676" : "rgba(255, 255, 255, 0.08)",
+                        color: isLivePace ? "#000" : "#fff",
+                        fontWeight: 700,
+                        border: isLivePace ? "none" : "1px solid rgba(255,255,255,0.15)",
+                        boxShadow: isLivePace ? "0 0 12px rgba(0, 230, 118, 0.4)" : "none",
+                        padding: "8px 16px",
+                      }}
+                    >
+                      {isLivePace ? "● SYNCED LIVE" : "🔴 SYNC LIVE PACE"}
                     </button>
-                    <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
-                      className="speed-select">
-                      {SPEED_OPTIONS.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                    {lapIndex === totalLaps && totalLaps > 0 && (
-                      <button 
-                        className="btn" 
-                        style={{ 
-                          backgroundColor: "#E8002D", 
-                          color: "#fff", 
-                          fontWeight: 700, 
-                          boxShadow: "0 0 10px rgba(232, 0, 45, 0.4)",
-                          marginLeft: 8
-                        }}
-                        onClick={() => setShowPodium(true)}
-                      >
-                        🏆 PODIUM
+                  )}
+
+                  {!isLivePace ? (
+                    <div className="controls" style={{ margin: 0 }}>
+                      <div className="lap-info">
+                        LAP <span className="lap-number">{lapIndex}</span>/{totalLaps}
+                      </div>
+                      <button className="btn secondary" onClick={reset}>↺ RESET</button>
+                      <button className="btn" onClick={togglePlay}>
+                        {playing ? "⏸ PAUSE" : lapIndex === 0 ? "▶ PLAY" : "▶ RESUME"}
                       </button>
-                    )}
-                  </div>
+                      <select value={speed} onChange={e => setSpeed(Number(e.target.value))}
+                        className="speed-select">
+                        {SPEED_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      {lapIndex === totalLaps && totalLaps > 0 && (
+                        <button 
+                          className="btn" 
+                          style={{ 
+                            backgroundColor: "#E8002D", 
+                            color: "#fff", 
+                            fontWeight: 700, 
+                            boxShadow: "0 0 10px rgba(232, 0, 45, 0.4)",
+                            marginLeft: 8
+                          }}
+                          onClick={() => setShowPodium(true)}
+                        >
+                          🏆 PODIUM
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="controls" style={{ margin: 0, padding: "8px 14px", backgroundColor: "rgba(0, 230, 118, 0.06)", border: "1px solid rgba(0, 230, 118, 0.3)" }}>
+                      <div className="lap-info" style={{ color: "#00e676", fontWeight: 700 }}>
+                        STREAMING LIVE · LAP {totalLaps}/{totalLaps}
+                      </div>
+                      <div style={{ fontSize: 10, opacity: 0.6, letterSpacing: 1, fontFamily: "'Barlow Condensed', sans-serif" }}>
+                        WAITING FOR API LAP UPDATES...
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -4163,6 +4207,7 @@ const RaceTrackerPage: FC = () => {
                     const d = drivers?.find(dr => dr.id === driverCode) ?? null;
                     setDrawerDriver(d);
                   }}
+                  isLivePace={isLivePace}
                 />
               </div>
 

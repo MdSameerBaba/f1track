@@ -214,10 +214,14 @@ export function useLiveRaceData(
     if (!countryName) return;
     let cancelled = false;
 
-    async function fetchRaceData() {
-      setLoading(true);
+    async function fetchRaceData(isPoll = false) {
+      if (!isPoll) {
+        setLoading(true);
+      }
       setError(null);
-      setSourceYear(null);
+      if (!isPoll) {
+        setSourceYear(null);
+      }
       // Track any valid OpenF1 session key found, even if lap data fails.
       // This lets the cockpit panel load team radio even when Jolpica handles laps.
       let foundSessionKey: number | null = null;
@@ -389,7 +393,18 @@ export function useLiveRaceData(
     }
 
     fetchRaceData();
-    return () => { cancelled = true; };
+
+    let pollInterval: ReturnType<typeof setInterval> | undefined;
+    if (season === 2026) {
+      pollInterval = setInterval(() => {
+        fetchRaceData(true);
+      }, 15000);
+    }
+
+    return () => {
+      cancelled = true;
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }, [season, countryName, cityHint, round]);
 
   return { lapData, drivers, loading, error, isLive, dataSource, sourceYear, sessionKey };
